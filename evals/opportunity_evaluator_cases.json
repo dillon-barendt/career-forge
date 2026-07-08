@@ -1,0 +1,34 @@
+{
+  "name": "career_ops_opportunity_evaluator_v1",
+  "prompt_version": "opportunity-evaluator-v1",
+  "cases": [
+    {
+      "name": "strong_backend_match",
+      "inputs": {
+        "company": "Acme",
+        "role": "Senior Backend Engineer",
+        "location": "Remote",
+        "compensation": "$160,000 - $200,000",
+        "description": "Python FastAPI Postgres observability distributed systems"
+      },
+      "expected_output": {
+        "minimum_fit_score": 75,
+        "suggested_next_action": "prioritize"
+      }
+    },
+    {
+      "name": "onsite_java_mismatch",
+      "inputs": {
+        "company": "Beta",
+        "role": "Java Engineer",
+        "location": "Onsite",
+        "compensation": "",
+        "description": "Java only onsite role requiring clearance"
+      },
+      "expected_output": {
+        "maximum_fit_score": 55,
+        "suggested_next_action": "deprioritize"
+      }
+    }
+  ]
+}

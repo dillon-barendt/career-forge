@@ -1,0 +1,1 @@
+"""Job posting provider implementations."""

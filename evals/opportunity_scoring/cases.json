@@ -1,0 +1,14 @@
+{
+  "name": "opportunity_scoring",
+  "prompt_version": "opportunity-evaluator-v1",
+  "cases": [
+    {
+      "name": "strong_python_backend",
+      "input": "Senior Backend Engineer using Python, FastAPI, Postgres, observability, remote.",
+      "expected": {
+        "minimum_fit_score": 75,
+        "suggested_next_action": "prioritize"
+      }
+    }
+  ]
+}

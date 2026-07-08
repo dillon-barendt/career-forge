@@ -1,0 +1,42 @@
+{
+  "name": "career_ops_email_classifier_v1",
+  "prompt_version": "email-classifier-v1",
+  "cases": [
+    {
+      "name": "interview_invitation",
+      "inputs": {
+        "subject": "Interview invitation for Backend Engineer at Acme",
+        "body": "Please send your availability for a technical interview next week.",
+        "sender": "Sam Recruiter <sam@acme.com>"
+      },
+      "expected_output": {
+        "classification": "Interview Invitation",
+        "human_review_required": false
+      }
+    },
+    {
+      "name": "weekly_newsletter",
+      "inputs": {
+        "subject": "Weekly software engineering jobs newsletter",
+        "body": "Here are 100 jobs you may like. Unsubscribe here.",
+        "sender": "Jobs Digest <digest@example.com>"
+      },
+      "expected_output": {
+        "classification": "Newsletter",
+        "human_review_required": false
+      }
+    },
+    {
+      "name": "ambiguous_company_update",
+      "inputs": {
+        "subject": "Quick update",
+        "body": "Thanks for your time. We will be in touch soon.",
+        "sender": "Talent <talent@example.com>"
+      },
+      "expected_output": {
+        "classification": "Company Communication",
+        "human_review_required": true
+      }
+    }
+  ]
+}

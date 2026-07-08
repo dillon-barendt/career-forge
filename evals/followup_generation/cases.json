@@ -1,0 +1,14 @@
+{
+  "name": "followup_generation",
+  "prompt_version": "followup-generator-v1",
+  "cases": [
+    {
+      "name": "recruiter_check_in",
+      "input": "Follow up after application submission.",
+      "expected": {
+        "tone": "direct",
+        "max_words": 120
+      }
+    }
+  ]
+}

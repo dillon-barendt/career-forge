@@ -1,0 +1,13 @@
+{
+  "source_url": "https://jobs.lever.co/acme-robotics/senior-backend-engineer",
+  "provider": "lever",
+  "company": "Acme Robotics",
+  "role": "Senior Backend Engineer",
+  "location": "Remote - United States",
+  "compensation": "$160,000 - $200,000",
+  "employment_type": "Full-time",
+  "remote_policy": "Remote",
+  "description": "Python, FastAPI, Postgres, observability, distributed systems.",
+  "skills": ["Python", "FastAPI", "Postgres"],
+  "tech_stack": ["Python", "Postgres"]
+}

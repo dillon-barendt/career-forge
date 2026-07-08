@@ -1,0 +1,22 @@
+{
+  "name": "email_classification",
+  "prompt_version": "email-classifier-v1",
+  "cases": [
+    {
+      "name": "interview_invitation",
+      "input": "Please send availability for a technical interview.",
+      "expected": {
+        "classification": "Interview Invitation",
+        "human_review_required": false
+      }
+    },
+    {
+      "name": "newsletter",
+      "input": "Weekly jobs newsletter. Unsubscribe here.",
+      "expected": {
+        "classification": "Newsletter",
+        "human_review_required": false
+      }
+    }
+  ]
+}

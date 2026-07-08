@@ -1,0 +1,13 @@
+{
+  "name": "resume_tailoring",
+  "prompt_version": "resume-tailor-v1",
+  "cases": [
+    {
+      "name": "backend_role",
+      "input": "Backend role emphasizing Python APIs and Postgres.",
+      "expected": {
+        "must_mention": ["Python", "APIs", "Postgres"]
+      }
+    }
+  ]
+}

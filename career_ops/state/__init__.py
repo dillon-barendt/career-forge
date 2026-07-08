@@ -1,0 +1,1 @@
+"""Local sync state persistence."""

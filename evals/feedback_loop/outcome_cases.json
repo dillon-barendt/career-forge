@@ -1,0 +1,34 @@
+{
+  "name": "feedback_loop_outcomes",
+  "schema_version": 1,
+  "cases": [
+    {
+      "name": "low_confidence_override_promotes_eval_case",
+      "input_event": {
+        "event_type": "human_override.recorded",
+        "prompt_version": "email-classifier-v1",
+        "original": "Company Communication",
+        "corrected": "Recruiter Outreach"
+      },
+      "expected_feedback_action": "add_classifier_eval_case"
+    },
+    {
+      "name": "poor_source_conversion_changes_provider_ranking",
+      "input_event": {
+        "event_type": "application.outcome.recorded",
+        "source": "Job Board",
+        "outcome": "no_response"
+      },
+      "expected_feedback_action": "deprioritize_source_after_threshold"
+    },
+    {
+      "name": "prompt_regression_blocks_rollout",
+      "input_event": {
+        "event_type": "prompt_eval.completed",
+        "prompt_version": "opportunity-evaluator-v1",
+        "pass_rate": 0.72
+      },
+      "expected_feedback_action": "block_prompt_rollout"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+name: Discussion
+description: Open an architecture or roadmap discussion
+title: "[Discussion]: "
+labels: ["discussion"]
+body:
+  - type: textarea
+    id: topic
+    attributes:
+      label: Topic
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
