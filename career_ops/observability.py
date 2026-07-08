@@ -153,6 +153,11 @@ class Observability:
                 unit="1",
                 description="Evaluation dataset pass rates.",
             ),
+            "career_forge.catalog.items": self._logfire.metric_counter(
+                "career_forge.catalog.items",
+                unit="1",
+                description="Cataloged agents, prompts, LLMs, and providers emitted to Logfire.",
+            ),
         }
 
     def _configure_variables(self) -> None:

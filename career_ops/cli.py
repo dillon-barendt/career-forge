@@ -22,6 +22,7 @@ from career_ops.gmail.client import GmailOAuthClient
 from career_ops.gmail.single_message import SingleMessageWriteControl, SingleMessageWriteResult
 from career_ops.gmail.sync import GmailSyncService
 from career_ops.ingestion.job_ingestion import JobIngestionPipeline
+from career_ops.logfire_catalog import emit_logfire_catalog, full_catalog
 from career_ops.materials.cover_letter import build_cover_letter
 from career_ops.materials.recruiter_dm import build_recruiter_dm
 from career_ops.materials.resume_tailor import build_resume_tailoring_notes
@@ -480,6 +481,28 @@ def run_evals(
             str(summary.failed),
             f"{summary.pass_rate:.0%}",
         )
+    console.print(table)
+
+
+@app.command("logfire-sync")
+def logfire_sync(
+    emit_logfire: Annotated[
+        bool,
+        typer.Option(help="Emit catalog records to Logfire."),
+    ] = True,
+) -> None:
+    """Sync agents, prompts, LLMs, and providers into Logfire metadata."""
+
+    observability = _observability() if emit_logfire else None
+    items = emit_logfire_catalog(observability) if observability else full_catalog()
+    table = Table(title="Career Forge Logfire Catalog")
+    table.add_column("Kind")
+    table.add_column("Name")
+    table.add_column("Version")
+    table.add_column("Status")
+    table.add_column("Owner")
+    for item in items:
+        table.add_row(item.kind, item.name, item.version, item.status, item.owner)
     console.print(table)
 
 

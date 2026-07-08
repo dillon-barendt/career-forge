@@ -1,6 +1,6 @@
 # Project State
 
-Version: `0.3.0`
+Version: `0.4.0`
 Last updated: 2026-07-08
 Status: Scaffold / vertical-slice development.
 
@@ -45,6 +45,7 @@ flowchart LR
 - Phase 4: Repository, documentation, OSS, and developer-experience foundation.
 - Phase 5: Career Forge rename and generic webhook intake foundation.
 - Phase 6: Logfire workspace integration for metrics, managed variables, Gateway routing, and eval runs.
+- Phase 7: Logfire catalog sync for agents, prompts, LLMs, and providers.
 
 ## In-Progress Work
 
@@ -63,7 +64,6 @@ flowchart LR
 - Dedicated `career-forge notion apply --latest` command for broader replay workflows.
 - Automatic scheduled Gmail polling.
 - Hosted Logfire alert policies.
-- Runnable `pydantic_evals.Dataset` harness.
 - Gmail history-id incremental sync.
 - Calendar integration.
 - Autonomous email sending or autonomous job applications.
@@ -76,7 +76,6 @@ flowchart LR
 
 - Scheduled runner for unattended Gmail polling.
 - Replay command for failed Notion mutations.
-- `pydantic_evals.Dataset` runner around the JSON eval fixtures.
 - Provider-specific API extraction for Greenhouse, Lever, Ashby, and Workday.
 - Calendar integration and interview scheduling support.
 
@@ -98,6 +97,6 @@ flowchart LR
 
 1. Configure Gmail OAuth and run `career-forge ingest-gmail --dry-run`.
 2. Validate one live Notion upsert with `career-forge ingest-gmail-message`.
-3. Enable Logfire traces.
+3. Enable Logfire traces and sync the Logfire catalog.
 4. Add a scheduled daily runner.
-5. Add eval runner and publish eval summaries.
+5. Expand eval datasets and publish richer summaries.

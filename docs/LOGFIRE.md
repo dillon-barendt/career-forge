@@ -63,6 +63,7 @@ Career Forge registers these Logfire metrics when
 | `career_forge.webhooks.duration_ms` | histogram | webhook ingestion latency |
 | `career_forge.evals.cases` | counter | eval cases executed |
 | `career_forge.evals.pass_rate` | histogram | eval dataset pass rates |
+| `career_forge.catalog.items` | counter | cataloged agents, prompts, LLMs, and providers emitted to Logfire |
 
 Managed variables are enabled with
 `CAREER_FORGE_LOGFIRE_VARIABLES_ENABLED=true`. The current code defines:
@@ -145,6 +146,25 @@ career-forge evals
 This wraps the JSON fixtures under `evals/` with `pydantic_evals.Dataset`,
 emits Pydantic Evals traces, writes `prompt_eval.completed` events to the local
 event log, and records eval metrics in Logfire.
+
+## Agents, Prompts, LLMs, And Providers
+
+Sync the project catalog into Logfire:
+
+```bash
+career-forge logfire-sync
+```
+
+This emits structured metadata records for:
+
+- agents from `career_ops/agents/`
+- prompt templates from `prompts/`
+- direct OpenAI, Pydantic AI Gateway, and deterministic fallback LLM paths
+- Gmail, Notion, Logfire, webhook, ATS, and Gateway providers
+
+Each record uses `career_ops.catalog.<kind>` with fields for `name`, `version`,
+`owner`, `status`, `description`, `path`, and `tags`, plus the
+`career_forge.catalog.items` metric.
 
 ## Webhook Channels
 

@@ -2,6 +2,15 @@
 
 All notable changes to Career Forge are tracked here.
 
+## 0.4.0 - 2026-07-08
+
+### Added
+
+- Structured Logfire catalog for agents, prompt templates, LLM routes, and providers.
+- `career-forge logfire-sync` command to print or emit the catalog into Logfire.
+- Catalog metric coverage through `career_forge.catalog.items`.
+- Tests covering catalog contents, CLI exposure, and observability metric registration.
+
 ## 0.3.0 - 2026-07-08
 
 ### Added
