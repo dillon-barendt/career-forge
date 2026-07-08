@@ -24,6 +24,7 @@ written or displayed.
 | --- | --- |
 | `EmailMessage` | Normalized Gmail message input |
 | `EmailClassification` | Category, confidence, and review flag |
+| `ClassifiedGmailMessage` | Operator-facing Gmail classification contract with prompt/model/fallback metadata |
 | `GmailIngestionPlan` | Extracted Notion entities plus audit metadata |
 | `JobPosting` | Provider-normalized job posting |
 | `OpportunityEvaluation` | Fit score, confidence, reasoning, and suggestions |
@@ -31,7 +32,7 @@ written or displayed.
 | `WeeklyAnalyticsInput` | Weekly applications and recruiter contacts |
 | `WeeklyAnalytics` | Funnel metrics and recommendations |
 | `NotionMutation` | Idempotent write intent for Notion |
-| `WorkflowEvent` | Append-only workflow event record |
+| `WorkflowEvent` | Append-only workflow event record with correlation id, status, replay eligibility, and redacted summary fields |
 | `WebhookRoute` | Route-level project/source identifiers |
 | `WebhookEnvelope` | Provider-neutral webhook receipt with payload, redacted headers, raw body hash, dedupe key, and status |
 | `WebhookAck` | Typed API acknowledgement returned to webhook providers |
@@ -54,6 +55,19 @@ written or displayed.
 - Newsletter
 - Ignore
 
+The Phase 8 operator-facing classification contract maps these legacy labels to
+explicit replay categories:
+
+- `opportunity`
+- `recruiter_contact`
+- `interview`
+- `follow_up`
+- `rejection`
+- `offer`
+- `newsletter`
+- `irrelevant`
+- `unknown`
+
 ## Dedupe Keys
 
 - Gmail messages: `gmail:{message_id}`
@@ -69,15 +83,29 @@ storage should move to SQLite/Postgres before production multi-worker use.
 
 ## Event Types
 
+- `gmail.sync.started`
+- `gmail.sync.completed`
+- `gmail.message.selected`
+- `gmail.message.skipped`
+- `gmail.message.classified`
+- `gmail.message.classification_failed`
 - `gmail.message.received`
 - `email.classified`
 - `notion.mutation.planned`
+- `notion.mutation.applied`
+- `notion.mutation.failed`
+- `notion.mutation.skipped`
 - `notion.mutation.executed`
 - `ai.evaluation.completed`
+- `operator.review_required`
 - `human_review.required`
+- `eval.completed`
 - `error.retry`
 - `webhook.received`
 - `webhook.duplicate`
 - `webhook.failed`
 - domain events for companies, contacts, opportunities, applications,
   follow-ups, and interviews
+
+`notion.mutation.planned` events include a serialized `NotionMutation` payload
+so the CLI can inspect and replay plans without mutating older events.

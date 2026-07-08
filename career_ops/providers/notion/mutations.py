@@ -9,6 +9,9 @@ class NotionMutationPlanner:
             return []
 
         mutations: list[NotionMutation] = []
+        source_message_id = plan.dedupe_key.removeprefix("gmail:")
+        requires_review = plan.classification.requires_human_review
+        safety_notes = ["Low-confidence classification requires review."] if requires_review else []
         if plan.company is not None:
             mutations.append(
                 NotionMutation(
@@ -16,6 +19,9 @@ class NotionMutationPlanner:
                     dedupe_key=f"company:{plan.company.name.lower()}",
                     action="upsert",
                     properties={"Name": plan.company.name},
+                    requires_review=requires_review,
+                    source_message_id=source_message_id,
+                    safety_notes=safety_notes,
                 )
             )
         if plan.contact is not None:
@@ -29,6 +35,9 @@ class NotionMutationPlanner:
                         "Email": plan.contact.email or "",
                         "Company": plan.contact.company or "",
                     },
+                    requires_review=requires_review,
+                    source_message_id=source_message_id,
+                    safety_notes=safety_notes,
                 )
             )
         if plan.opportunity is not None:
@@ -42,6 +51,9 @@ class NotionMutationPlanner:
                         "Company": plan.opportunity.company,
                         "Source": "gmail",
                     },
+                    requires_review=requires_review,
+                    source_message_id=source_message_id,
+                    safety_notes=safety_notes,
                 )
             )
         if plan.application is not None:
@@ -56,6 +68,9 @@ class NotionMutationPlanner:
                         "Status": plan.application.status.value,
                         "Next Action": plan.application.next_action or "",
                     },
+                    requires_review=requires_review,
+                    source_message_id=source_message_id,
+                    safety_notes=safety_notes,
                 )
             )
         if plan.interview is not None:
@@ -69,6 +84,9 @@ class NotionMutationPlanner:
                         "Company": plan.interview.company,
                         "Status": plan.interview.status,
                     },
+                    requires_review=requires_review,
+                    source_message_id=source_message_id,
+                    safety_notes=safety_notes,
                 )
             )
         if plan.follow_up is not None:
@@ -84,6 +102,9 @@ class NotionMutationPlanner:
                         else "",
                         "Priority": plan.follow_up.priority,
                     },
+                    requires_review=requires_review,
+                    source_message_id=source_message_id,
+                    safety_notes=safety_notes,
                 )
             )
         return mutations

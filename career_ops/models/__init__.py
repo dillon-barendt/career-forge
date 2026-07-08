@@ -19,7 +19,25 @@ class EmailCategory(StrEnum):
     IGNORE = "Ignore"
 
 
+class GmailClassificationType(StrEnum):
+    OPPORTUNITY = "opportunity"
+    RECRUITER_CONTACT = "recruiter_contact"
+    INTERVIEW = "interview"
+    FOLLOW_UP = "follow_up"
+    REJECTION = "rejection"
+    OFFER = "offer"
+    NEWSLETTER = "newsletter"
+    IRRELEVANT = "irrelevant"
+    UNKNOWN = "unknown"
+
+
 class EventType(StrEnum):
+    GMAIL_SYNC_STARTED = "gmail.sync.started"
+    GMAIL_SYNC_COMPLETED = "gmail.sync.completed"
+    GMAIL_MESSAGE_SELECTED = "gmail.message.selected"
+    GMAIL_MESSAGE_SKIPPED = "gmail.message.skipped"
+    GMAIL_MESSAGE_CLASSIFIED = "gmail.message.classified"
+    GMAIL_MESSAGE_CLASSIFICATION_FAILED = "gmail.message.classification_failed"
     GMAIL_MESSAGE_RECEIVED = "gmail.message.received"
     EMAIL_CLASSIFIED = "email.classified"
     COMPANY_UPSERTED = "company.upserted"
@@ -29,13 +47,18 @@ class EventType(StrEnum):
     FOLLOW_UP_CREATED = "follow_up.created"
     INTERVIEW_DETECTED = "interview.detected"
     NOTION_MUTATION_PLANNED = "notion.mutation.planned"
+    NOTION_MUTATION_APPLIED = "notion.mutation.applied"
+    NOTION_MUTATION_FAILED = "notion.mutation.failed"
+    NOTION_MUTATION_SKIPPED = "notion.mutation.skipped"
     NOTION_MUTATION_EXECUTED = "notion.mutation.executed"
     AI_EVALUATION_COMPLETED = "ai.evaluation.completed"
+    OPERATOR_REVIEW_REQUIRED = "operator.review_required"
     HUMAN_REVIEW_REQUIRED = "human_review.required"
     HUMAN_OVERRIDE_RECORDED = "human_override.recorded"
     APPLICATION_OUTCOME_RECORDED = "application.outcome.recorded"
     RECOMMENDATION_ISSUED = "recommendation.issued"
     PROMPT_EVAL_COMPLETED = "prompt_eval.completed"
+    EVAL_COMPLETED = "eval.completed"
     STALE_OPPORTUNITY_DETECTED = "stale_opportunity.detected"
     AGENT_FAILURE = "agent.failure"
     ERROR_RETRY = "error.retry"
@@ -47,6 +70,18 @@ class NotionMutationStatus(StrEnum):
     DRY_RUN = "dry_run"
     SKIPPED_DUPLICATE = "skipped_duplicate"
     FAILED = "failed"
+
+
+class EventStatus(StrEnum):
+    STARTED = "started"
+    COMPLETED = "completed"
+    PLANNED = "planned"
+    APPLIED = "applied"
+    DRY_RUN = "dry_run"
+    SKIPPED = "skipped"
+    FAILED = "failed"
+    WARNING = "warning"
+    REVIEW_REQUIRED = "review_required"
 
 
 class ApplicationStage(StrEnum):
@@ -75,6 +110,86 @@ class EmailClassification(BaseModel):
     prompt_version: str = "email-classifier-v1"
 
 
+class ClassifiedGmailMessage(BaseModel):
+    message_id: str
+    thread_id: str | None = None
+    sender: str
+    subject: str
+    received_at: datetime
+    classification_type: GmailClassificationType
+    confidence: float = Field(ge=0, le=1)
+    rationale: list[str] = Field(default_factory=list)
+    extracted_opportunity_fields: dict[str, object] = Field(default_factory=dict)
+    extracted_company_fields: dict[str, object] = Field(default_factory=dict)
+    extracted_contact_fields: dict[str, object] = Field(default_factory=dict)
+    recommended_notion_intent: str
+    low_confidence: bool = False
+    prompt_version: str
+    model_name: str
+    fallback_status: str
+
+    @classmethod
+    def from_plan(
+        cls,
+        *,
+        message: "EmailMessage",
+        plan: "GmailIngestionPlan",
+        model_name: str,
+        fallback_status: str,
+    ) -> "ClassifiedGmailMessage":
+        opportunity_fields: dict[str, object] = {}
+        if plan.opportunity is not None:
+            opportunity_fields = {
+                "title": plan.opportunity.title,
+                "company": plan.opportunity.company,
+                "source": plan.opportunity.source,
+            }
+        company_fields: dict[str, object] = {}
+        if plan.company is not None:
+            company_fields = {"name": plan.company.name}
+        contact_fields: dict[str, object] = {}
+        if plan.contact is not None:
+            contact_fields = {
+                "name": plan.contact.name,
+                "email": plan.contact.email,
+                "company": plan.contact.company,
+            }
+        return cls(
+            message_id=message.message_id,
+            thread_id=message.thread_id,
+            sender=message.sender,
+            subject=message.subject,
+            received_at=message.received_at,
+            classification_type=_classification_type(plan.classification.category),
+            confidence=plan.classification.confidence,
+            rationale=plan.classification.reasons,
+            extracted_opportunity_fields=opportunity_fields,
+            extracted_company_fields=company_fields,
+            extracted_contact_fields=contact_fields,
+            recommended_notion_intent="upsert" if plan.should_mutate_notion else "none",
+            low_confidence=plan.classification.requires_human_review,
+            prompt_version=plan.classification.prompt_version,
+            model_name=model_name,
+            fallback_status=fallback_status,
+        )
+
+
+def _classification_type(category: EmailCategory) -> GmailClassificationType:
+    mapping = {
+        EmailCategory.RECRUITER_OUTREACH: GmailClassificationType.RECRUITER_CONTACT,
+        EmailCategory.APPLICATION_CONFIRMATION: GmailClassificationType.OPPORTUNITY,
+        EmailCategory.INTERVIEW_INVITATION: GmailClassificationType.INTERVIEW,
+        EmailCategory.INTERVIEW_CONFIRMATION: GmailClassificationType.INTERVIEW,
+        EmailCategory.OFFER: GmailClassificationType.OFFER,
+        EmailCategory.REJECTION: GmailClassificationType.REJECTION,
+        EmailCategory.RECRUITER_FOLLOW_UP: GmailClassificationType.FOLLOW_UP,
+        EmailCategory.COMPANY_COMMUNICATION: GmailClassificationType.UNKNOWN,
+        EmailCategory.NEWSLETTER: GmailClassificationType.NEWSLETTER,
+        EmailCategory.IGNORE: GmailClassificationType.IRRELEVANT,
+    }
+    return mapping[category]
+
+
 class AuditEvent(BaseModel):
     source: str
     source_id: str
@@ -89,6 +204,12 @@ class WorkflowEvent(BaseModel):
     source: str
     source_id: str
     data: dict[str, object] = Field(default_factory=dict)
+    correlation_id: str | None = None
+    actor: str = "system"
+    status: EventStatus = EventStatus.COMPLETED
+    error_details: str | None = None
+    replay_eligible: bool = False
+    redacted_payload_summary: dict[str, object] = Field(default_factory=dict)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
@@ -199,6 +320,10 @@ class NotionMutation(BaseModel):
     dedupe_key: str
     action: str
     properties: dict[str, object]
+    requires_review: bool = False
+    source_event_id: str | None = None
+    source_message_id: str | None = None
+    safety_notes: list[str] = Field(default_factory=list)
 
 
 class NotionMutationRecord(BaseModel):
@@ -224,6 +349,8 @@ class PydanticAIEmailEvaluation(BaseModel):
     human_review_required: bool
     reasons: list[str] = Field(default_factory=list)
     prompt_version: str = "email-classifier-v1"
+    model_name: str = "openai:gpt-5.2"
+    fallback_status: str = "none"
 
 
 class GmailSyncResult(BaseModel):
@@ -234,6 +361,7 @@ class GmailSyncResult(BaseModel):
     mutations_planned: int = 0
     mutations_executed: int = 0
     human_review_required: int = 0
+    low_confidence_classifications: int = 0
     errors: list[str] = Field(default_factory=list)
 
 
@@ -253,9 +381,12 @@ __all__ = [
     "EmailCategory",
     "EmailClassification",
     "EmailMessage",
+    "ClassifiedGmailMessage",
+    "EventStatus",
     "EventType",
     "FollowUpRecord",
     "GmailIngestionPlan",
+    "GmailClassificationType",
     "GmailSyncResult",
     "InterviewRecord",
     "JobIngestionResult",

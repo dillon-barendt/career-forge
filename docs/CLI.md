@@ -13,11 +13,12 @@ Shows the action queues: apply, follow up, review, and interview prep.
 ## Gmail Sync
 
 ```bash
+career-forge setup validate
 career-forge ingest-gmail --dry-run
-career-forge ingest-gmail --no-dry-run
 ```
 
-Dry-run mode is the default and plans Notion mutations without live writes.
+Dry-run mode is the default. It plans Notion mutations without live writes and
+does not acknowledge Gmail messages or advance the broad sync checkpoint.
 
 ## Single-Message Gmail Control
 
@@ -47,9 +48,24 @@ AI, and prints fit/priority guidance.
 
 ```bash
 career-forge sync-notion --dry-run
+career-forge notion plan --latest
+career-forge notion apply --latest --dry-run
+career-forge notion apply --latest --no-dry-run --confirm
 ```
 
-Verifies Notion sync wiring. Replay of queued failed mutations is planned.
+`sync-notion` verifies wiring. `notion plan` inspects the latest serialized
+`notion.mutation.planned` event. `notion apply --dry-run` replays the latest
+unapplied plan without writing. Live replay requires `--no-dry-run --confirm`
+and validates the target `Dedupe Key` property before writing.
+
+## Local Runner
+
+```bash
+career-forge run-once --dry-run
+```
+
+Use this as the cron or launchd target after setup validation succeeds.
+`--apply-reviewed` is reserved until reviewed-plan metadata is implemented.
 
 ## Events
 
