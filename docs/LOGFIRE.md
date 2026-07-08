@@ -15,10 +15,12 @@ Production-style token:
 
 ```bash
 export CAREER_OPS_LOGFIRE_TOKEN=<write-token>
-export LOGFIRE_TOKEN=<write-token>
 export CAREER_OPS_LOGFIRE_ENVIRONMENT=local
 export CAREER_OPS_LOGFIRE_BASE_URL=https://logfire-us.pydantic.dev
 ```
+
+`LOGFIRE_TOKEN` is supported as a compatibility fallback by the runtime, but
+`CAREER_OPS_LOGFIRE_TOKEN` is preferred for this project.
 
 Target project: `dillon-barendt/career-ops`
 
@@ -47,7 +49,7 @@ posting text as trace content.
 Run a representative dry job:
 
 ```bash
-LOGFIRE_TOKEN=<write-token> career-ops evaluate "Logfire smoke test"
+CAREER_OPS_LOGFIRE_TOKEN=<write-token> career-ops evaluate "Logfire smoke test"
 ```
 
 In Logfire Live view for `dillon-barendt/career-ops`, search for service

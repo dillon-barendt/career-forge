@@ -16,7 +16,7 @@
 - weekly analytics
 - Notion mutation planning
 
-### Phase 3: Production Vertical Slice
+### Phase 3: Production-Shaped Vertical Slice
 
 - Gmail OAuth client boundary
 - checkpointed Gmail sync service
@@ -25,6 +25,7 @@
 - append-only event log
 - Notion upsert executor and HTTP gateway
 - prompt/eval assets
+- live external credential validation remains part of Phase 5
 
 ### Phase 4: Repository and OSS Foundation
 
@@ -34,25 +35,36 @@
 - pre-commit, EditorConfig, Ruff, Pytest, UV
 - expanded documentation, examples, ADRs, project state, and release checklist
 
-## Recommended Phase 5
+## Recommended Phase 5: Vertical Slice Hardening
 
-1. Add a scheduled runner for `career-ops ingest-gmail --no-dry-run`.
-2. Add a replay command for failed Notion mutation events.
-3. Wrap JSON eval datasets with `pydantic_evals.Dataset`.
-4. Publish eval summaries and prompt-version metrics to Logfire.
-5. Add provider-specific API extraction for Greenhouse, Lever, Ashby, Workday.
-6. Add Gmail history-id polling for high-volume inboxes.
-7. Add explicit Notion review queues for failed mutations and low-confidence AI.
+1. Finish typed settings and setup validation for local credentials.
+2. Run Gmail dry-run ingestion against the dedicated inbox.
+3. Lock the email classification schema and confidence thresholds.
+4. Verify append-only event log replay/debug behavior with real messages.
+5. Validate Notion mutation planner output against the live schema.
+6. Add a clearer dry-run review command for pending mutation plans.
+7. Execute the first live Notion upsert in a safe test database.
+8. Expand Logfire trace coverage across Gmail, classification, planning, and writes.
+9. Wrap JSON eval datasets with a runnable eval harness.
+
+## Later Platform Work
+
+- Add a scheduled runner for `career-ops ingest-gmail --no-dry-run`.
+- Add a replay command for failed Notion mutation events.
+- Publish eval summaries and prompt-version metrics to Logfire.
+- Add provider-specific API extraction for Greenhouse, Lever, Ashby, Workday.
+- Add Gmail history-id polling for high-volume inboxes.
+- Add explicit Notion review queues for failed mutations and low-confidence AI.
 
 ## Future Features
 
-- Interview Agent
-- Resume Agent
 - Dream Company Watch
 - Calendar integration
 - recruiter relationship analytics
 - provider plugins
 - marketplace for custom agents
+- Interview Agent
+- Resume Agent
 - dashboard UI
 - web frontend
 - API server

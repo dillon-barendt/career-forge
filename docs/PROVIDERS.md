@@ -2,18 +2,18 @@
 
 Providers isolate external systems from business logic.
 
-## Implemented Provider Families
+## Provider Status
 
 | Provider | Module | Status |
 | --- | --- | --- |
-| Gmail | `career_ops.gmail` | OAuth client and sync service |
-| Notion | `career_ops.providers.notion` | mutation planner, executor, HTTP gateway |
-| Greenhouse | `career_ops.providers.jobs` | HTML extractor |
-| Lever | `career_ops.providers.jobs` | HTML extractor |
-| Ashby | `career_ops.providers.jobs` | HTML extractor |
-| Workday | `career_ops.providers.jobs` | HTML extractor with metadata fallback |
-| LinkedIn | `career_ops.providers.jobs` | HTML extractor scaffold |
-| Indeed | `career_ops.providers.jobs` | HTML extractor scaffold |
+| Gmail | `career_ops.gmail` | In progress: OAuth client and dry-run sync service |
+| Notion | `career_ops.providers.notion` | In progress: mutation planner, executor, HTTP gateway |
+| Greenhouse | `career_ops.providers.jobs` | Scaffolded: provider matching and generic HTML extraction |
+| Lever | `career_ops.providers.jobs` | Scaffolded: provider matching and generic HTML extraction |
+| Ashby | `career_ops.providers.jobs` | Scaffolded: provider matching and generic HTML extraction |
+| Workday | `career_ops.providers.jobs` | Scaffolded: provider matching and metadata fallback |
+| LinkedIn | `career_ops.providers.jobs` | Planned/scaffolded: job discovery and relationship tracking |
+| Indeed | `career_ops.providers.jobs` | Planned/scaffolded: job discovery provider |
 
 ## Job Provider Interface
 
@@ -33,3 +33,6 @@ Provider output is `JobPosting`. Providers must not write to Notion directly.
 3. Register it in `default_job_provider_registry`.
 4. Add tests with fake HTML.
 5. Document limitations here.
+
+Do not treat a provider as production-supported until it has fixture coverage,
+realistic extraction behavior, and live dry-run evidence.

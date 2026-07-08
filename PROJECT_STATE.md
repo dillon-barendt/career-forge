@@ -2,7 +2,19 @@
 
 Version: `0.1.0`
 Last updated: 2026-07-08
-Status: Production vertical slice complete; OSS repository foundation in progress.
+Status: Scaffold / vertical-slice development.
+
+## Current Phase
+
+Scaffold / vertical-slice development.
+
+## Immediate Objective
+
+Get one observable, replayable workflow running locally:
+
+```text
+email -> classification -> event log -> Notion mutation plan -> optional apply
+```
 
 ## Current Architecture
 
@@ -29,14 +41,34 @@ flowchart LR
 
 - Phase 1: Career Command Center architecture and Notion schema.
 - Phase 2: Automation architecture, providers, agents, CLI, analytics.
-- Phase 3: Gmail to Pydantic AI to Notion production vertical slice.
+- Phase 3: Gmail to Pydantic AI to Notion production-shaped vertical slice scaffold.
 - Phase 4: Repository, documentation, OSS, and developer-experience foundation.
 
 ## In-Progress Work
 
+- Typed setup validation and local dry-run operator flow.
+- Gmail dry-run ingestion with OAuth configuration still manual.
+- Email classification schema and Pydantic AI service boundary.
+- Append-only event log for replay/debugging.
+- Notion mutation planner and upsert executor.
 - Live Gmail OAuth configuration on the target machine.
 - Live Notion upsert validation against real Notion database properties.
 - Logfire project/token setup for production traces.
+
+## Not Yet Implemented
+
+- Dedicated `career-ops notion plan --latest` command.
+- Dedicated `career-ops notion apply --latest` command.
+- Automatic scheduled Gmail polling.
+- Hosted Logfire alert policies.
+- Runnable `pydantic_evals.Dataset` harness.
+- Gmail history-id incremental sync.
+- Calendar integration.
+- Autonomous email sending or autonomous job applications.
+- Full provider-specific extraction for Greenhouse, Lever, Ashby, Workday,
+  LinkedIn, and Indeed.
+- Deep Recruiter, Resume, Interview, and Analytics agent workflows beyond
+  current scaffolding/helpers.
 
 ## Outstanding Work
 

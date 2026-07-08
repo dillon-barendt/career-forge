@@ -36,7 +36,7 @@ Manual wiring still required:
 
 ## Job URL Ingestion
 
-Supported provider classes:
+Scaffolded provider classes:
 
 - Lever
 - Greenhouse
@@ -82,9 +82,11 @@ logfire --base-url='https://logfire-us.pydantic.dev' projects use --org 'dillon-
 or:
 
 ```bash
-export LOGFIRE_TOKEN=<write-token>
 export CAREER_OPS_LOGFIRE_TOKEN=<write-token>
 ```
+
+`LOGFIRE_TOKEN` is supported as a compatibility fallback, but
+`CAREER_OPS_LOGFIRE_TOKEN` is preferred.
 
 The code calls `logfire.configure()` and `logfire.instrument_pydantic_ai()` when
 the package is installed. Spans are created for Gmail polling, Gmail message

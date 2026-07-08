@@ -7,15 +7,32 @@ Logfire, ATS job postings, and Notion into one observable workflow.
 Notion is the source of truth. The CLI and agents reduce manual work around
 triage, fit evaluation, follow-ups, interview prep, and weekly review.
 
+## Current Implementation Status
+
+Career Ops is currently in scaffold / vertical-slice development.
+
+| Area | Status | Notes |
+|---|---:|---|
+| CLI skeleton | In progress | Core command surface exists for setup checks, dry-runs, ingestion, events, feedback, and local materials |
+| Settings | In progress | Typed local configuration using `.env` and `pydantic-settings` |
+| Event log | In progress | Append-only JSONL runtime state under `.career_ops/` |
+| Gmail ingestion | In progress | OAuth client and dry-run sync exist; real OAuth setup remains manual |
+| Email classification | In progress | Pydantic AI structured output with deterministic fallback for dry-runs/tests |
+| Notion integration | In progress | Mutation planning and upsert executor exist; first live write still needs real token/database validation |
+| Logfire tracing | In progress | Wrapper and feedback-loop events exist; hosted alerts still need manual setup |
+| ATS providers | Scaffolded | Provider abstraction and generic extraction exist; provider-specific extraction remains shallow |
+| Calendar integration | Planned | Interview scheduling and reminders are not implemented |
+| Agents | Scaffolded | Agent modules exist as boundaries; deeper recruiter/resume/interview workflows are planned |
+
 ## What It Does
 
-- syncs career email from `dillon.barendt.jobs@gmail.com`
+- dry-runs career email ingestion from `dillon.barendt.jobs@gmail.com`
 - classifies messages into job-search categories
 - evaluates opportunities with structured Pydantic AI outputs
-- plans and executes safe Notion upserts
+- plans Notion mutations before live writes
 - logs workflow events for replay and debugging
-- traces AI and sync work with Logfire
-- ingests job URLs from supported ATS providers
+- traces AI and sync work with Logfire when configured
+- ingests job URLs through a provider abstraction
 - provides a daily CLI interface for action queues
 
 ## Architecture
@@ -67,13 +84,15 @@ CAREER_OPS_GMAIL_TOKEN_PATH=.career_ops/gmail_token.json
 CAREER_OPS_AI_PROVIDER=pydantic-ai
 CAREER_OPS_PYDANTIC_AI_MODEL=openai:gpt-5.2
 CAREER_OPS_OPENAI_API_KEY=
-LOGFIRE_TOKEN=
 CAREER_OPS_LOGFIRE_TOKEN=
 CAREER_OPS_LOGFIRE_BASE_URL=https://logfire-us.pydantic.dev
 CAREER_OPS_LOGFIRE_PROJECT=dillon-barendt/career-ops
 CAREER_OPS_EVENT_LOG_PATH=.career_ops/events.jsonl
 CAREER_OPS_STATE_PATH=.career_ops/state.json
 ```
+
+`LOGFIRE_TOKEN` is also supported as a compatibility fallback, but
+`CAREER_OPS_LOGFIRE_TOKEN` is preferred for project-local configuration.
 
 Gmail OAuth credentials and live Notion writes are intentionally manual setup
 steps. Dry-run commands work without live credentials.
@@ -85,25 +104,63 @@ scripts/configure_local_secrets.sh
 uv run career-ops check-setup
 ```
 
+## Fast Path: Local Dry Run
+
+This is the intended first successful local workflow:
+
+```bash
+uv sync --extra dev
+cp .env.example .env
+scripts/configure_local_secrets.sh
+uv run career-ops check-setup
+uv run career-ops ingest-gmail --dry-run
+uv run career-ops events --limit 20
+```
+
+## Fast Path: First Live Notion Write
+
+The safe live-write path is:
+
+```text
+dry run -> inspect event log -> inspect mutation plan -> apply one write
+```
+
+Current working commands:
+
+```bash
+uv run career-ops ingest-gmail --dry-run
+uv run career-ops events --limit 20
+uv run career-ops ingest-gmail --no-dry-run
+```
+
+Dedicated `career-ops notion plan --latest` and `career-ops notion apply
+--latest` commands are planned, not implemented yet. Until then, inspect the
+event log and use `--no-dry-run` only after Gmail, Notion token, and database
+IDs are configured.
+
+## Tonight Vertical Slice
+
+The first production-shaped loop is:
+
+```text
+Gmail inbox
+  -> fetch recent messages
+  -> classify message
+  -> append event log entry
+  -> generate Notion mutation plan
+  -> dry-run preview
+  -> apply one safe Notion upsert
+  -> trace everything in Logfire
+```
+
+Everything else should hang off this loop.
+
 ## Daily Workflow
 
 Start every day with:
 
 ```bash
 career-ops today
-```
-
-Then run safe sync:
-
-```bash
-career-ops ingest-gmail --dry-run
-career-ops events --limit 20
-```
-
-After reviewing planned behavior and credentials:
-
-```bash
-career-ops ingest-gmail --no-dry-run
 ```
 
 Useful commands:
@@ -142,26 +199,30 @@ demo data.
 - [Evals](docs/EVALS.md)
 - [Roadmap](ROADMAP.md)
 
-## Supported Providers
+## Provider Status
 
-- Gmail
-- Notion
-- Greenhouse
-- Lever
-- Ashby
-- Workday
-- LinkedIn
-- Indeed
+| Provider | Status | Purpose |
+|---|---:|---|
+| Gmail | In progress | Career inbox ingestion and message classification |
+| Notion | In progress | Source of truth and dashboard persistence |
+| Logfire | In progress | Tracing, metrics, evals, and feedback loops |
+| Greenhouse | Planned | Job posting extraction |
+| Lever | Planned | Job posting extraction |
+| Ashby | Planned | Job posting extraction |
+| Workday | Planned | Job posting extraction |
+| LinkedIn | Planned | Job discovery and relationship tracking |
+| Indeed | Planned | Job discovery provider |
+| Google Calendar | Planned | Interview scheduling and follow-up reminders |
 
 ## Roadmap
 
 Near-term:
 
-- scheduled Gmail polling
-- Notion mutation replay
-- pydantic-evals runner
-- provider-specific ATS extractors
-- calendar integration
+- validate the first live Notion upsert
+- improve dry-run mutation review
+- expand Logfire trace coverage and alert policies
+- wrap JSON eval fixtures with a runnable eval harness
+- harden provider-specific ATS extraction
 
 Future:
 
