@@ -13,6 +13,9 @@ class GmailClient(Protocol):
     def fetch_since(self, checkpoint: str | None, labels: list[str]) -> list[EmailMessage]:
         """Fetch messages newer than or not yet represented by a checkpoint."""
 
+    def fetch_message(self, message_id: str) -> EmailMessage:
+        """Fetch one Gmail message by provider message id."""
+
     def acknowledge_processed(self, message_id: str) -> None:
         """Mark one message processed in the provider."""
 
@@ -52,6 +55,13 @@ class GmailOAuthClient:
             )
             messages.append(self._to_email_message(payload))
         return list(reversed(messages))
+
+    def fetch_message(self, message_id: str) -> EmailMessage:
+        service = self._gmail_service()
+        payload = (
+            service.users().messages().get(userId="me", id=message_id, format="full").execute()
+        )
+        return self._to_email_message(payload)
 
     def acknowledge_processed(self, message_id: str) -> None:
         if self._processed_label_id is None:

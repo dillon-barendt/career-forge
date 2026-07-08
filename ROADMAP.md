@@ -42,8 +42,8 @@
 3. Lock the email classification schema and confidence thresholds.
 4. Verify append-only event log replay/debug behavior with real messages.
 5. Validate Notion mutation planner output against the live schema.
-6. Add a clearer dry-run review command for pending mutation plans.
-7. Execute the first live Notion upsert in a safe test database.
+6. Use `career-ops ingest-gmail-message` for single-message dry-run review.
+7. Execute the first live Notion upsert from one selected Gmail message mutation.
 8. Expand Logfire trace coverage across Gmail, classification, planning, and writes.
 9. Wrap JSON eval datasets with a runnable eval harness.
 

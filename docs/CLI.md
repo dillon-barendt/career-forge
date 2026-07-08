@@ -19,6 +19,21 @@ career-ops ingest-gmail --no-dry-run
 
 Dry-run mode is the default and plans Notion mutations without live writes.
 
+## Single-Message Gmail Control
+
+```bash
+career-ops ingest-gmail-message <gmail-message-id> --dry-run
+career-ops ingest-gmail-message <gmail-message-id> \
+  --no-dry-run \
+  --mutation-index 0 \
+  --confirm-message-id <gmail-message-id>
+```
+
+Use this before broad live sync. Dry-run mode prints every candidate Notion
+mutation with an index. Live mode applies exactly one selected mutation, requires
+the same message id as confirmation, and does not advance the broad Gmail
+checkpoint.
+
 ## Job URL Ingestion
 
 ```bash

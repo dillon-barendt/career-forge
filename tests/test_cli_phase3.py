@@ -10,6 +10,7 @@ def test_phase3_cli_commands_run_in_safe_dry_mode(tmp_path, monkeypatch) -> None
 
     assert runner.invoke(app, ["ingest-gmail", "--dry-run"]).exit_code == 0
     assert runner.invoke(app, ["sync-notion", "--dry-run"]).exit_code == 0
+    assert runner.invoke(app, ["ingest-gmail-message", "--help"]).exit_code == 0
     assert runner.invoke(app, ["events"]).exit_code == 0
     assert runner.invoke(app, ["evaluate", "example-opportunity"]).exit_code == 0
     assert runner.invoke(app, ["feedback"]).exit_code == 0

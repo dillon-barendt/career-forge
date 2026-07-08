@@ -57,8 +57,8 @@ flowchart LR
 
 ## Not Yet Implemented
 
-- Dedicated `career-ops notion plan --latest` command.
-- Dedicated `career-ops notion apply --latest` command.
+- Dedicated `career-ops notion plan --latest` command for broader replay workflows.
+- Dedicated `career-ops notion apply --latest` command for broader replay workflows.
 - Automatic scheduled Gmail polling.
 - Hosted Logfire alert policies.
 - Runnable `pydantic_evals.Dataset` harness.
@@ -95,7 +95,7 @@ flowchart LR
 ## Next Priorities
 
 1. Configure Gmail OAuth and run `career-ops ingest-gmail --dry-run`.
-2. Validate Notion live upsert in a test database.
+2. Validate one live Notion upsert with `career-ops ingest-gmail-message`.
 3. Enable Logfire traces.
 4. Add a scheduled daily runner.
 5. Add eval runner and publish eval summaries.

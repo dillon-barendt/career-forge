@@ -18,6 +18,7 @@ from career_ops.config import get_settings
 from career_ops.events.log import EventLog
 from career_ops.external_setup import check_external_setup
 from career_ops.gmail.client import GmailOAuthClient
+from career_ops.gmail.single_message import SingleMessageWriteControl, SingleMessageWriteResult
 from career_ops.gmail.sync import GmailSyncService
 from career_ops.ingestion.job_ingestion import JobIngestionPipeline
 from career_ops.materials.cover_letter import build_cover_letter
@@ -190,6 +191,48 @@ def ingest_gmail(
     table.add_row("Mutations executed", str(result.mutations_executed))
     table.add_row("Dry run", "yes" if dry_run else "no")
     console.print(table)
+
+
+@app.command("ingest-gmail-message")
+def ingest_gmail_message(
+    message_id: Annotated[str, typer.Argument(help="Exact Gmail message id to inspect.")],
+    dry_run: Annotated[bool, typer.Option(help="Plan writes without mutating Notion.")] = True,
+    mutation_index: Annotated[
+        int | None,
+        typer.Option(help="Required for live mode; applies only this one mutation."),
+    ] = None,
+    confirm_message_id: Annotated[
+        str | None,
+        typer.Option(help="Required for live mode; must exactly match MESSAGE_ID."),
+    ] = None,
+) -> None:
+    """Inspect or apply one Gmail message without running broad inbox sync."""
+
+    settings = get_settings()
+    observability = _observability()
+    event_log = EventLog(settings.event_log_path)
+    executor = NotionUpsertExecutor(
+        gateway=None if dry_run else NotionHttpGateway(settings),
+        event_log=event_log,
+        dry_run=dry_run,
+        observability=observability,
+    )
+    control = SingleMessageWriteControl(
+        gmail_client=_gmail_client_for_message(),
+        event_log=event_log,
+        notion_executor=executor,
+        observability=observability,
+    )
+    try:
+        result = control.run(
+            message_id=message_id,
+            mutation_index=mutation_index,
+            confirm_message_id=confirm_message_id,
+        )
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    _print_single_message_result(result)
 
 
 @app.command("sync-notion")
@@ -528,6 +571,42 @@ def _print_feedback_report(report: FeedbackLoopReport) -> None:
     console.print(action_table)
 
 
+def _print_single_message_result(result: SingleMessageWriteResult) -> None:
+    summary = Table(title="Single Gmail Message Control")
+    summary.add_column("Field")
+    summary.add_column("Value")
+    summary.add_row("Message ID", result.message_id)
+    summary.add_row("Mode", "dry-run" if result.dry_run else "live")
+    summary.add_row("Classification", result.classification)
+    summary.add_row("Confidence", f"{result.confidence:.2f}")
+    summary.add_row("Human Review", "yes" if result.requires_human_review else "no")
+    summary.add_row("Candidate mutations", str(len(result.mutations)))
+    summary.add_row(
+        "Selected mutation",
+        "all previewed" if result.dry_run else str(result.selected_mutation_index),
+    )
+    summary.add_row("Executed", str(result.execution.executed))
+    summary.add_row("Dry-run records", str(result.execution.dry_run))
+    summary.add_row("Failed", str(result.execution.failed))
+    console.print(summary)
+
+    plan = Table(title="Candidate Notion Mutations")
+    plan.add_column("Index")
+    plan.add_column("Database")
+    plan.add_column("Dedupe Key")
+    plan.add_column("Action")
+    plan.add_column("Properties")
+    for index, mutation in enumerate(result.mutations):
+        plan.add_row(
+            str(index),
+            mutation.database,
+            mutation.dedupe_key,
+            mutation.action,
+            json.dumps(mutation.properties, sort_keys=True),
+        )
+    console.print(plan)
+
+
 def _emit_feedback_to_logfire(report: FeedbackLoopReport) -> None:
     observability = _observability()
     for name, value in report.metrics.items():
@@ -545,6 +624,10 @@ class _EmptyGmailClient:
     def fetch_since(self, checkpoint: str | None, labels: list[str]) -> list[EmailMessage]:
         return []
 
+    def fetch_message(self, message_id: str) -> EmailMessage:
+        msg = "Gmail credentials are required to fetch a specific message."
+        raise RuntimeError(msg)
+
     def acknowledge_processed(self, message_id: str) -> None:
         return None
 
@@ -553,6 +636,15 @@ def _gmail_client(*, dry_run: bool) -> GmailOAuthClient | _EmptyGmailClient:
     settings = get_settings()
     if dry_run and not settings.gmail_credentials_path.exists():
         return _EmptyGmailClient()
+    return GmailOAuthClient(
+        credentials_path=settings.gmail_credentials_path,
+        token_path=settings.gmail_token_path,
+        processed_label_name=settings.gmail_processed_label,
+    )
+
+
+def _gmail_client_for_message() -> GmailOAuthClient:
+    settings = get_settings()
     return GmailOAuthClient(
         credentials_path=settings.gmail_credentials_path,
         token_path=settings.gmail_token_path,

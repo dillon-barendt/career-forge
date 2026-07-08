@@ -27,6 +27,23 @@ scripts/configure_local_secrets.sh
 The script prompts with hidden input and writes
 `.career_ops/gmail_credentials.json` locally. The file is ignored by Git.
 
+## Single-Message Live-Write Control
+
+Before broad live Gmail-to-Notion sync, use one known Gmail message id:
+
+```bash
+career-ops ingest-gmail-message <gmail-message-id> --dry-run
+career-ops events --limit 20
+career-ops ingest-gmail-message <gmail-message-id> \
+  --no-dry-run \
+  --mutation-index 0 \
+  --confirm-message-id <gmail-message-id>
+```
+
+This path fetches one message, classifies it, prints indexed Notion mutation
+candidates, and live-writes only the selected mutation. It does not acknowledge
+the Gmail message or advance the broad sync checkpoint.
+
 ## Sync Behavior
 
 - polls Gmail labels, default `INBOX`

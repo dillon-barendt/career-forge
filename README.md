@@ -128,15 +128,20 @@ dry run -> inspect event log -> inspect mutation plan -> apply one write
 Current working commands:
 
 ```bash
-uv run career-ops ingest-gmail --dry-run
+uv run career-ops ingest-gmail-message <gmail-message-id> --dry-run
 uv run career-ops events --limit 20
-uv run career-ops ingest-gmail --no-dry-run
+uv run career-ops ingest-gmail-message <gmail-message-id> \
+  --no-dry-run \
+  --mutation-index 0 \
+  --confirm-message-id <gmail-message-id>
 ```
 
-Dedicated `career-ops notion plan --latest` and `career-ops notion apply
---latest` commands are planned, not implemented yet. Until then, inspect the
-event log and use `--no-dry-run` only after Gmail, Notion token, and database
-IDs are configured.
+`ingest-gmail-message` does not advance the broad Gmail checkpoint and does not
+acknowledge the message as processed. Live mode applies exactly one indexed
+mutation and requires the message id to be repeated through
+`--confirm-message-id`. Dedicated `career-ops notion plan --latest` and
+`career-ops notion apply --latest` commands are still planned for broader replay
+workflows.
 
 ## Tonight Vertical Slice
 
@@ -144,7 +149,7 @@ The first production-shaped loop is:
 
 ```text
 Gmail inbox
-  -> fetch recent messages
+  -> fetch one known message
   -> classify message
   -> append event log entry
   -> generate Notion mutation plan
