@@ -29,7 +29,7 @@ Implemented:
 
 Manual wiring still required:
 
-- Gmail API OAuth credentials at `.career_ops/gmail_credentials.json`
+- Gmail API OAuth credentials at `.career_forge/gmail_credentials.json`
 - polling/scheduled execution
 - Notion database `Dedupe Key` properties for live upserts
 - Gmail filters/labels if they should be managed outside code
@@ -57,6 +57,41 @@ Flow:
 
 Unsupported URLs return `needs_human_review=True`.
 
+## Webhook Intake
+
+External webhook providers should call:
+
+```text
+https://hooks.concordmanage.com/{project-name}/{source-name}
+```
+
+The first supported source is:
+
+```text
+https://hooks.concordmanage.com/career-forge/notion
+```
+
+Local development maps the public domain to the FastAPI route:
+
+```text
+https://hooks.concordmanage.com/career-forge/notion
+  -> http://localhost:<api-port>/hooks/career-forge/notion
+```
+
+The automation path is intentionally short:
+
+1. Route resolves `(project_name, source_name)` through the registry.
+2. Raw body and redacted headers are normalized into a `WebhookEnvelope`.
+3. A provider verifier runs when configured; Notion currently reports
+   `not_configured`.
+4. A deterministic dedupe key is generated and checked against the receipt
+   store.
+5. The source handler emits safe structured metadata and returns an
+   acknowledgement without long-running business processing.
+
+Future webhook sources should add a handler, optional verifier, registry entry,
+tests, and a source-specific Logfire channel.
+
 ## Confidence and Fallback
 
 Email confidence is 0-1 because it represents classifier certainty. Opportunity
@@ -76,17 +111,17 @@ Configure Logfire with either:
 
 ```bash
 logfire --base-url='https://logfire-us.pydantic.dev' auth
-logfire --base-url='https://logfire-us.pydantic.dev' projects use --org 'dillon-barendt' 'career-ops'
+logfire --base-url='https://logfire-us.pydantic.dev' projects use --org 'dillon-barendt' 'career-forge'
 ```
 
 or:
 
 ```bash
-export CAREER_OPS_LOGFIRE_TOKEN=<write-token>
+export CAREER_FORGE_LOGFIRE_TOKEN=<write-token>
 ```
 
 `LOGFIRE_TOKEN` is supported as a compatibility fallback, but
-`CAREER_OPS_LOGFIRE_TOKEN` is preferred.
+`CAREER_FORGE_LOGFIRE_TOKEN` is preferred.
 
 The code calls `logfire.configure()` and `logfire.instrument_pydantic_ai()` when
 the package is installed. Spans are created for Gmail polling, Gmail message

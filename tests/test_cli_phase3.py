@@ -1,10 +1,17 @@
 from career_ops.cli import app
+from career_ops.config import get_settings
 from typer.testing import CliRunner
 
 
 def test_phase3_cli_commands_run_in_safe_dry_mode(tmp_path, monkeypatch) -> None:
-    monkeypatch.setenv("CAREER_OPS_STATE_PATH", str(tmp_path / "state.json"))
-    monkeypatch.setenv("CAREER_OPS_EVENT_LOG_PATH", str(tmp_path / "events.jsonl"))
+    monkeypatch.setenv("CAREER_FORGE_STATE_PATH", str(tmp_path / "state.json"))
+    monkeypatch.setenv("CAREER_FORGE_EVENT_LOG_PATH", str(tmp_path / "events.jsonl"))
+    monkeypatch.setenv(
+        "CAREER_FORGE_GMAIL_CREDENTIALS_PATH",
+        str(tmp_path / "missing_credentials.json"),
+    )
+    monkeypatch.setenv("CAREER_FORGE_GMAIL_TOKEN_PATH", str(tmp_path / "missing_token.json"))
+    get_settings.cache_clear()
 
     runner = CliRunner()
 
@@ -14,10 +21,11 @@ def test_phase3_cli_commands_run_in_safe_dry_mode(tmp_path, monkeypatch) -> None
     assert runner.invoke(app, ["events"]).exit_code == 0
     assert runner.invoke(app, ["evaluate", "example-opportunity"]).exit_code == 0
     assert runner.invoke(app, ["feedback"]).exit_code == 0
+    get_settings.cache_clear()
 
 
 def test_feedback_cli_records_outcomes_and_overrides(tmp_path, monkeypatch) -> None:
-    monkeypatch.setenv("CAREER_OPS_EVENT_LOG_PATH", str(tmp_path / "events.jsonl"))
+    monkeypatch.setenv("CAREER_FORGE_EVENT_LOG_PATH", str(tmp_path / "events.jsonl"))
 
     runner = CliRunner()
 
@@ -43,4 +51,4 @@ def test_feedback_cli_records_outcomes_and_overrides(tmp_path, monkeypatch) -> N
     result = runner.invoke(app, ["feedback"])
 
     assert result.exit_code == 0
-    assert "Career Ops Feedback Loop" in result.stdout
+    assert "Career Forge Feedback Loop" in result.stdout

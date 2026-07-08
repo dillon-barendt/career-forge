@@ -1,6 +1,6 @@
 # Architecture
 
-Career Ops is a local Python automation platform with Notion as the system of
+Career Forge is a local Python automation platform with Notion as the system of
 record and provider adapters around every external source.
 
 ```mermaid
@@ -8,6 +8,10 @@ flowchart LR
     Gmail["Gmail Inbox"] --> GmailSync["Gmail Sync Service"]
     GmailSync --> GmailAgent["Gmail Agent"]
     URL["Job URL"] --> OpportunityAgent["Opportunity Agent"]
+    Hook["Webhook POST /hooks/{project}/{source}"] --> WebhookService["Webhook Ingestion Service"]
+    WebhookService --> WebhookRegistry["Source Registry"]
+    WebhookRegistry --> WebhookHandler["Provider Handler"]
+    WebhookService --> Logfire
     GmailAgent --> AI["Pydantic AI Service"]
     OpportunityAgent --> AI
     AI --> Planner["Notion Mutation Planner"]
@@ -16,7 +20,7 @@ flowchart LR
     Executor --> Events["Append-only Event Log"]
     GmailSync --> Events
     AI --> Logfire["Logfire"]
-    Notion --> CLI["career-ops CLI"]
+    Notion --> CLI["career-forge CLI"]
     Notion --> Analytics["Analytics Agent"]
 ```
 
@@ -30,6 +34,9 @@ flowchart LR
 | `ingestion/` | Orchestrates provider extraction and evaluation |
 | `evaluation/` | Produces structured opportunity reasoning |
 | `agents/` | Thin role-based coordinators |
+| `api/` | FastAPI app factory and HTTP route modules |
+| `application/webhooks/` | Provider-neutral webhook ingestion, registry, verification, and idempotency |
+| `infrastructure/webhooks/` | Header redaction, queue placeholders, and observability helpers |
 | `notion/` | Existing direct Notion API repositories |
 | `providers/notion/` | Notion mutation planning, execution, and HTTP gateway |
 | `gmail/` | Gmail OAuth client and checkpointed sync service |
@@ -52,6 +59,31 @@ class JobProvider(Protocol):
 
 Adding a provider should only require a new provider class and registration in
 `providers/jobs/registry.py`.
+
+## Webhook Boundary
+
+Incoming webhooks use the domain convention:
+
+```text
+https://hooks.concordmanage.com/{project-name}/{source-name}
+```
+
+The current live route is:
+
+```text
+POST /hooks/career-forge/notion
+```
+
+Route handlers stay thin. They validate route variables, enforce the configured
+body-size limit, parse JSON, and pass raw body bytes plus headers to
+`WebhookIngestionService`. Source-specific behavior is selected by
+`WebhookSourceRegistry`, with handler and verifier abstractions for future
+sources such as Gmail, Google Calendar, GitHub, Greenhouse, Lever, Ashby,
+LinkedIn, Indeed, and internal agent callbacks.
+
+Webhook receipts currently use an in-memory `WebhookReceiptStore` for local
+development. Production deployment should replace it with durable SQLite,
+Postgres, or the project storage layer before running multiple workers.
 
 ## Notion Write Strategy
 

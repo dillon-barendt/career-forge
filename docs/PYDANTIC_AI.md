@@ -19,10 +19,10 @@ structured outputs. Callers receive Pydantic models, not raw LLM text.
 
 ## Model Provider Abstraction
 
-The model is configured through `CAREER_OPS_PYDANTIC_AI_MODEL`, for example:
+The model is configured through `CAREER_FORGE_PYDANTIC_AI_MODEL`, for example:
 
 ```bash
-CAREER_OPS_PYDANTIC_AI_MODEL=openai:gpt-5.2
+CAREER_FORGE_PYDANTIC_AI_MODEL=openai:gpt-5.2
 ```
 
 For tonight, use Pydantic AI with the OpenAI provider directly:

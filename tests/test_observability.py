@@ -36,7 +36,7 @@ def test_observability_configures_target_logfire_project(monkeypatch) -> None:
     assert settings.logfire_token is not None
     assert settings.logfire_token.get_secret_value() == "test-token"
     assert fake_logfire.configure_kwargs["token"] == "test-token"
-    assert fake_logfire.configure_kwargs["service_name"] == "career-ops"
+    assert fake_logfire.configure_kwargs["service_name"] == "career-forge"
     assert fake_logfire.configure_kwargs["environment"] == "test"
     assert fake_logfire.configure_kwargs["advanced"].base_url == "https://logfire-us.pydantic.dev"
     assert fake_logfire.instrument_kwargs == {

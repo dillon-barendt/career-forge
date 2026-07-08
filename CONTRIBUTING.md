@@ -1,6 +1,6 @@
 # Contributing
 
-Career Ops is currently personal-workflow software with an OSS-ready structure.
+Career Forge is currently personal-workflow software with an OSS-ready structure.
 Contributions should preserve the existing architecture: domain logic stays
 provider-independent, Notion remains the source of truth, and external effects
 must be observable and idempotent.

@@ -29,7 +29,7 @@
 
 ### Phase 4: Repository and OSS Foundation
 
-- professional `career-ops` repository scaffold
+- professional `career-forge` repository scaffold
 - root-level Python package layout
 - GitHub Actions, Dependabot, issue templates, PR template
 - pre-commit, EditorConfig, Ruff, Pytest, UV
@@ -42,14 +42,14 @@
 3. Lock the email classification schema and confidence thresholds.
 4. Verify append-only event log replay/debug behavior with real messages.
 5. Validate Notion mutation planner output against the live schema.
-6. Use `career-ops ingest-gmail-message` for single-message dry-run review.
+6. Use `career-forge ingest-gmail-message` for single-message dry-run review.
 7. Execute the first live Notion upsert from one selected Gmail message mutation.
 8. Expand Logfire trace coverage across Gmail, classification, planning, and writes.
 9. Wrap JSON eval datasets with a runnable eval harness.
 
 ## Later Platform Work
 
-- Add a scheduled runner for `career-ops ingest-gmail --no-dry-run`.
+- Add a scheduled runner for `career-forge ingest-gmail --no-dry-run`.
 - Add a replay command for failed Notion mutation events.
 - Publish eval summaries and prompt-version metrics to Logfire.
 - Add provider-specific API extraction for Greenhouse, Lever, Ashby, Workday.

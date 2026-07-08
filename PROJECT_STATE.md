@@ -1,6 +1,6 @@
 # Project State
 
-Version: `0.1.0`
+Version: `0.2.0`
 Last updated: 2026-07-08
 Status: Scaffold / vertical-slice development.
 
@@ -18,7 +18,7 @@ email -> classification -> event log -> Notion mutation plan -> optional apply
 
 ## Current Architecture
 
-Career Ops is a local Python automation platform for a software engineering job
+Career Forge is a local Python automation platform for a software engineering job
 search. Notion is the source of truth. Gmail, ATS job boards, Pydantic AI, and
 Logfire are provider-backed integrations around the domain model.
 
@@ -34,7 +34,7 @@ flowchart LR
     GmailSync --> Events["Event Log"]
     Executor --> Events
     AI --> Logfire["Logfire"]
-    Notion --> CLI["career-ops CLI"]
+    Notion --> CLI["career-forge CLI"]
 ```
 
 ## Completed Milestones
@@ -43,6 +43,7 @@ flowchart LR
 - Phase 2: Automation architecture, providers, agents, CLI, analytics.
 - Phase 3: Gmail to Pydantic AI to Notion production-shaped vertical slice scaffold.
 - Phase 4: Repository, documentation, OSS, and developer-experience foundation.
+- Phase 5: Career Forge rename and generic webhook intake foundation.
 
 ## In-Progress Work
 
@@ -57,8 +58,8 @@ flowchart LR
 
 ## Not Yet Implemented
 
-- Dedicated `career-ops notion plan --latest` command for broader replay workflows.
-- Dedicated `career-ops notion apply --latest` command for broader replay workflows.
+- Dedicated `career-forge notion plan --latest` command for broader replay workflows.
+- Dedicated `career-forge notion apply --latest` command for broader replay workflows.
 - Automatic scheduled Gmail polling.
 - Hosted Logfire alert policies.
 - Runnable `pydantic_evals.Dataset` harness.
@@ -94,8 +95,8 @@ flowchart LR
 
 ## Next Priorities
 
-1. Configure Gmail OAuth and run `career-ops ingest-gmail --dry-run`.
-2. Validate one live Notion upsert with `career-ops ingest-gmail-message`.
+1. Configure Gmail OAuth and run `career-forge ingest-gmail --dry-run`.
+2. Validate one live Notion upsert with `career-forge ingest-gmail-message`.
 3. Enable Logfire traces.
 4. Add a scheduled daily runner.
 5. Add eval runner and publish eval summaries.

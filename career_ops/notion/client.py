@@ -16,7 +16,7 @@ class NotionClient:
 
     def __init__(self, settings: Settings, client: httpx.AsyncClient | None = None) -> None:
         if settings.notion_token is None:
-            msg = "CAREER_OPS_NOTION_TOKEN is required for Notion API calls."
+            msg = "CAREER_FORGE_NOTION_TOKEN is required for Notion API calls."
             raise ValueError(msg)
 
         token = settings.notion_token.get_secret_value()

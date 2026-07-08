@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-mkdir -p .career_ops
+mkdir -p .career_forge
 touch .env
 
 upsert_env() {
@@ -34,7 +34,7 @@ prompt_secret() {
   printf '%s' "$value"
 }
 
-echo "This writes secrets only to ignored local files: .env and .career_ops/gmail_credentials.json"
+echo "This writes secrets only to ignored local files: .env and .career_forge/gmail_credentials.json"
 
 google_client_id="$(prompt_secret 'Google OAuth Client ID')"
 google_client_secret="$(prompt_secret 'Google OAuth Client Secret')"
@@ -57,18 +57,18 @@ payload = {
         "redirect_uris": ["http://localhost"],
     }
 }
-path = Path(".career_ops/gmail_credentials.json")
+path = Path(".career_forge/gmail_credentials.json")
 path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 '
 
-upsert_env "CAREER_OPS_GMAIL_CREDENTIALS_PATH" ".career_ops/gmail_credentials.json"
-upsert_env "CAREER_OPS_GMAIL_TOKEN_PATH" ".career_ops/gmail_token.json"
-upsert_env "CAREER_OPS_AI_PROVIDER" "pydantic-ai"
-upsert_env "CAREER_OPS_PYDANTIC_AI_MODEL" "openai:gpt-5.2"
+upsert_env "CAREER_FORGE_GMAIL_CREDENTIALS_PATH" ".career_forge/gmail_credentials.json"
+upsert_env "CAREER_FORGE_GMAIL_TOKEN_PATH" ".career_forge/gmail_token.json"
+upsert_env "CAREER_FORGE_AI_PROVIDER" "pydantic-ai"
+upsert_env "CAREER_FORGE_PYDANTIC_AI_MODEL" "openai:gpt-5.2"
 upsert_env "OPENAI_API_KEY" "$openai_api_key"
 
 if [[ -n "$notion_token" ]]; then
-  upsert_env "CAREER_OPS_NOTION_TOKEN" "$notion_token"
+  upsert_env "CAREER_FORGE_NOTION_TOKEN" "$notion_token"
 fi
 
-echo "Local secrets written. Run: uv run career-ops check-setup"
+echo "Local secrets written. Run: uv run career-forge check-setup"

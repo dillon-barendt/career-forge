@@ -15,7 +15,7 @@ class NotionHttpGateway:
 
     def __init__(self, settings: Settings) -> None:
         if settings.notion_token is None:
-            msg = "CAREER_OPS_NOTION_TOKEN is required for live Notion sync."
+            msg = "CAREER_FORGE_NOTION_TOKEN is required for live Notion sync."
             raise ValueError(msg)
         self.settings = settings
         self._client = httpx.Client(

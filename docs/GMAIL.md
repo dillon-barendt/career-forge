@@ -1,6 +1,6 @@
 # Gmail
 
-Career Ops syncs the dedicated career inbox:
+Career Forge syncs the dedicated career inbox:
 
 `dillon.barendt.jobs@gmail.com`
 
@@ -8,15 +8,15 @@ Career Ops syncs the dedicated career inbox:
 
 1. Create a Google OAuth desktop client.
 2. Download the client JSON.
-3. Save it to `.career_ops/gmail_credentials.json`.
+3. Save it to `.career_forge/gmail_credentials.json`.
 4. Run:
 
 ```bash
-career-ops ingest-gmail --dry-run
+career-forge ingest-gmail --dry-run
 ```
 
 The first live client run opens the OAuth browser flow and writes
-`.career_ops/gmail_token.json`.
+`.career_forge/gmail_token.json`.
 
 If you have a client ID and client secret but not a downloaded JSON file, run:
 
@@ -25,16 +25,16 @@ scripts/configure_local_secrets.sh
 ```
 
 The script prompts with hidden input and writes
-`.career_ops/gmail_credentials.json` locally. The file is ignored by Git.
+`.career_forge/gmail_credentials.json` locally. The file is ignored by Git.
 
 ## Single-Message Live-Write Control
 
 Before broad live Gmail-to-Notion sync, use one known Gmail message id:
 
 ```bash
-career-ops ingest-gmail-message <gmail-message-id> --dry-run
-career-ops events --limit 20
-career-ops ingest-gmail-message <gmail-message-id> \
+career-forge ingest-gmail-message <gmail-message-id> --dry-run
+career-forge events --limit 20
+career-forge ingest-gmail-message <gmail-message-id> \
   --no-dry-run \
   --mutation-index 0 \
   --confirm-message-id <gmail-message-id>
@@ -50,7 +50,7 @@ the Gmail message or advance the broad sync checkpoint.
 - classifies messages with Pydantic AI
 - plans Notion mutations
 - records append-only events
-- marks processed messages with `Career Ops/Processed`
+- marks processed messages with `Career Forge/Processed`
 - checkpoints the last processed message id
 
 ## Safety

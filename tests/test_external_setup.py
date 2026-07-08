@@ -51,12 +51,12 @@ def test_check_setup_cli_does_not_print_secret_values(tmp_path, monkeypatch) -> 
         ),
         encoding="utf-8",
     )
-    monkeypatch.setenv("CAREER_OPS_GMAIL_CREDENTIALS_PATH", str(credentials_path))
-    monkeypatch.setenv("CAREER_OPS_NOTION_TOKEN", "secret_do_not_print")
-    monkeypatch.setenv("CAREER_OPS_OPPORTUNITIES_DATABASE_ID", "opportunities")
-    monkeypatch.setenv("CAREER_OPS_COMPANIES_DATABASE_ID", "companies")
-    monkeypatch.setenv("CAREER_OPS_CONTACTS_DATABASE_ID", "contacts")
-    monkeypatch.setenv("CAREER_OPS_APPLICATIONS_DATABASE_ID", "applications")
+    monkeypatch.setenv("CAREER_FORGE_GMAIL_CREDENTIALS_PATH", str(credentials_path))
+    monkeypatch.setenv("CAREER_FORGE_NOTION_TOKEN", "secret_do_not_print")
+    monkeypatch.setenv("CAREER_FORGE_OPPORTUNITIES_DATABASE_ID", "opportunities")
+    monkeypatch.setenv("CAREER_FORGE_COMPANIES_DATABASE_ID", "companies")
+    monkeypatch.setenv("CAREER_FORGE_CONTACTS_DATABASE_ID", "contacts")
+    monkeypatch.setenv("CAREER_FORGE_APPLICATIONS_DATABASE_ID", "applications")
     monkeypatch.setenv("OPENAI_API_KEY", "sk-do-not-print")
     monkeypatch.setenv("LOGFIRE_TOKEN", "lf-do-not-print")
 

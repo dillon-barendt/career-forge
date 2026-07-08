@@ -3,12 +3,13 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "career-ops"
-version = "0.1.0"
-description = "Local career operations automation with Gmail, Pydantic AI, Logfire, and Notion."
+name = "career-forge"
+version = "0.2.0"
+description = "Local career automation with Gmail, Pydantic AI, Logfire, Notion, and webhooks."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+  "fastapi>=0.115.0",
   "google-api-python-client>=2.198.0",
   "google-auth-httplib2>=0.4.0",
   "google-auth-oauthlib>=1.4.0",
@@ -19,17 +20,19 @@ dependencies = [
   "pydantic-settings>=2.3.0",
   "rich>=13.7.0",
   "typer>=0.12.0",
+  "uvicorn>=0.30.0",
 ]
 
 [project.optional-dependencies]
 dev = [
+  "anyio>=4.0.0",
   "pre-commit>=4.0.0",
   "pytest>=8.2.0",
   "ruff>=0.5.0",
 ]
 
 [project.scripts]
-career-ops = "career_ops.cli:app"
+career-forge = "career_ops.cli:app"
 
 [tool.hatch.build.targets.wheel]
 packages = ["career_ops"]

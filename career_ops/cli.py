@@ -48,7 +48,7 @@ def config() -> None:
     """Show local configuration status without printing secrets."""
 
     settings = get_settings()
-    table = Table(title="Career Ops Configuration")
+    table = Table(title="Career Forge Configuration")
     table.add_column("Setting")
     table.add_column("Value")
     table.add_row("Notion token", "set" if settings.has_notion_credentials else "missing")
@@ -304,7 +304,7 @@ def events(limit: Annotated[int, typer.Option(help="Number of events to show.")]
     """Show recent workflow events."""
 
     event_log = EventLog(get_settings().event_log_path)
-    table = Table(title="Career Ops Events")
+    table = Table(title="Career Forge Events")
     table.add_column("Created")
     table.add_column("Type")
     table.add_column("Source")
@@ -321,9 +321,9 @@ def events(limit: Annotated[int, typer.Option(help="Number of events to show.")]
 
 @app.command()
 def today() -> None:
-    """Show the primary daily Career Ops action queue."""
+    """Show the primary daily Career Forge action queue."""
 
-    table = Table(title="Career Ops Today")
+    table = Table(title="Career Forge Today")
     table.add_column("Queue")
     table.add_column("Action")
     table.add_column("Source")
@@ -514,7 +514,7 @@ def _print_queue(title: str, rows: list[tuple[str, str]]) -> None:
 
 
 def _print_feedback_report(report: FeedbackLoopReport) -> None:
-    metrics_table = Table(title="Career Ops Feedback Loop")
+    metrics_table = Table(title="Career Forge Feedback Loop")
     metrics_table.add_column("Metric")
     metrics_table.add_column("Value")
     for name, value in report.metrics.items():

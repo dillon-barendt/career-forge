@@ -2,6 +2,7 @@
 .env
 .env.*
 !.env.example
+.career_forge/
 .career_ops/
 .logfire/
 .venv/

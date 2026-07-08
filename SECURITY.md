@@ -1,6 +1,6 @@
 # Security
 
-Career Ops handles sensitive job-search data, including email metadata,
+Career Forge handles sensitive job-search data, including email metadata,
 recruiter contacts, company records, applications, and generated materials.
 
 ## Supported Versions
@@ -25,4 +25,4 @@ Never commit:
 
 ## Local Data
 
-Runtime files are written under `.career_ops/` by default and are ignored by Git.
+Runtime files are written under `.career_forge/` by default and are ignored by Git.

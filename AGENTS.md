@@ -1,4 +1,4 @@
-# Career Ops Agents
+# Career Forge Agents
 
 The platform is split into small agents. Agents coordinate typed pipelines; they
 do not own Notion schemas directly.

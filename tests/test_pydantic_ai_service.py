@@ -47,7 +47,7 @@ def test_pydantic_ai_service_returns_structured_email_evaluation() -> None:
 
 def test_pydantic_ai_service_loads_openai_key_from_settings(monkeypatch) -> None:
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-    monkeypatch.setenv("CAREER_OPS_OPENAI_API_KEY", "sk-test-local")
+    monkeypatch.setenv("CAREER_FORGE_OPENAI_API_KEY", "sk-test-local")
     get_settings.cache_clear()
 
     fake_module = ModuleType("pydantic_ai")

@@ -1,1 +1,1 @@
-"""Notion provider adapters for Career Ops domain events."""
+"""Notion provider adapters for Career Forge domain events."""

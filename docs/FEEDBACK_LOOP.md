@@ -1,11 +1,11 @@
 # Feedback Loop
 
-Career Ops uses Logfire plus the append-only event log as the evaluation and
+Career Forge uses Logfire plus the append-only event log as the evaluation and
 improvement layer. The loop is deliberately simple:
 
 ```mermaid
 flowchart LR
-    Gmail["Gmail / Job URLs"] --> Agents["Career Ops Agents"]
+    Gmail["Gmail / Job URLs"] --> Agents["Career Forge Agents"]
     Agents --> Events["Append-only Event Log"]
     Agents --> Logfire["Logfire Traces"]
     Events --> Feedback["Feedback Analyzer"]
@@ -18,7 +18,7 @@ flowchart LR
 
 ## Tracked Signals
 
-The feedback analyzer reads `.career_ops/events.jsonl` and summarizes:
+The feedback analyzer reads `.career_forge/events.jsonl` and summarizes:
 
 - email classification confidence
 - opportunity fit score
@@ -34,23 +34,23 @@ The feedback analyzer reads `.career_ops/events.jsonl` and summarizes:
 Run locally:
 
 ```bash
-career-ops feedback
-career-ops feedback --emit-logfire
+career-forge feedback
+career-forge feedback --emit-logfire
 ```
 
 Record manual outcomes:
 
 ```bash
-career-ops record-outcome app_123 applied --source LinkedIn
-career-ops record-outcome app_123 interview --source LinkedIn
-career-ops record-override msg_123 "Company Communication" "Recruiter Outreach" \
+career-forge record-outcome app_123 applied --source LinkedIn
+career-forge record-outcome app_123 interview --source LinkedIn
+career-forge record-override msg_123 "Company Communication" "Recruiter Outreach" \
   --prompt-version email-classifier-v1
 ```
 
 ## Alert Rules
 
 Create Logfire alerts from the structured observations emitted by
-`career-ops feedback --emit-logfire`.
+`career-forge feedback --emit-logfire`.
 
 | Alert | Signal | Default Trigger | Response |
 | --- | --- | --- | --- |
@@ -75,7 +75,7 @@ Use successful and failed outcomes as follows:
   from one-off bad matches.
 - Provider ranking: prefer sources with higher response and interview
   conversion; demote sources with repeated low conversion.
-- Daily recommendations: bias `career-ops today` toward high-quality sources,
+- Daily recommendations: bias `career-forge today` toward high-quality sources,
   due follow-ups, and opportunities with proven response patterns.
 
 ## Event Contract

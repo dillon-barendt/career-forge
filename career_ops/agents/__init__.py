@@ -1,1 +1,1 @@
-"""Independent Career Ops agents."""
+"""Independent Career Forge agents."""

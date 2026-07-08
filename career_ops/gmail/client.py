@@ -28,7 +28,7 @@ class GmailOAuthClient:
         *,
         credentials_path: Path,
         token_path: Path,
-        processed_label_name: str = "Career Ops/Processed",
+        processed_label_name: str = "Career Forge/Processed",
     ) -> None:
         self.credentials_path = credentials_path
         self.token_path = token_path

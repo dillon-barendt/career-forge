@@ -1,6 +1,6 @@
-# Career Ops
+# Career Forge
 
-Career Ops is a local automation platform for running a serious software
+Career Forge is a local automation platform for running a serious software
 engineering job search. It connects a dedicated Gmail inbox, Pydantic AI,
 Logfire, ATS job postings, and Notion into one observable workflow.
 
@@ -9,17 +9,18 @@ triage, fit evaluation, follow-ups, interview prep, and weekly review.
 
 ## Current Implementation Status
 
-Career Ops is currently in scaffold / vertical-slice development.
+Career Forge is currently in scaffold / vertical-slice development.
 
 | Area | Status | Notes |
 |---|---:|---|
 | CLI skeleton | In progress | Core command surface exists for setup checks, dry-runs, ingestion, events, feedback, and local materials |
 | Settings | In progress | Typed local configuration using `.env` and `pydantic-settings` |
-| Event log | In progress | Append-only JSONL runtime state under `.career_ops/` |
+| Event log | In progress | Append-only JSONL runtime state under `.career_forge/` |
 | Gmail ingestion | In progress | OAuth client and dry-run sync exist; real OAuth setup remains manual |
 | Email classification | In progress | Pydantic AI structured output with deterministic fallback for dry-runs/tests |
 | Notion integration | In progress | Mutation planning and upsert executor exist; first live write still needs real token/database validation |
 | Logfire tracing | In progress | Wrapper and feedback-loop events exist; hosted alerts still need manual setup |
+| Webhook API | In progress | Generic FastAPI route exists for `career-forge/notion`; durable receipt storage and hosted routing remain follow-up work |
 | ATS providers | Scaffolded | Provider abstraction and generic extraction exist; provider-specific extraction remains shallow |
 | Calendar integration | Planned | Interview scheduling and reminders are not implemented |
 | Agents | Scaffolded | Agent modules exist as boundaries; deeper recruiter/resume/interview workflows are planned |
@@ -42,6 +43,10 @@ flowchart LR
     Gmail["Gmail Inbox"] --> GmailSync["Gmail Sync"]
     GmailSync --> EmailAI["Pydantic AI Email Classifier"]
     JobURL["Job URL"] --> ATS["ATS Provider Extractor"]
+    Hook["hooks.concordmanage.com/career-forge/notion"] --> WebhookAPI["FastAPI Webhook API"]
+    WebhookAPI --> WebhookService["Webhook Ingestion Service"]
+    WebhookService --> Events
+    WebhookService --> Logfire
     ATS --> OppAI["Pydantic AI Opportunity Evaluator"]
     EmailAI --> Planner["Notion Mutation Planner"]
     OppAI --> Planner
@@ -51,7 +56,7 @@ flowchart LR
     Executor --> Events
     EmailAI --> Logfire["Logfire"]
     OppAI --> Logfire
-    Notion --> CLI["career-ops CLI"]
+    Notion --> CLI["career-forge CLI"]
 ```
 
 Core principle: business logic stays independent from providers. Gmail, Notion,
@@ -77,22 +82,29 @@ uv run pytest
 Important settings in `.env`:
 
 ```bash
-CAREER_OPS_NOTION_TOKEN=secret_xxx
-CAREER_OPS_GMAIL_ACCOUNT=dillon.barendt.jobs@gmail.com
-CAREER_OPS_GMAIL_CREDENTIALS_PATH=.career_ops/gmail_credentials.json
-CAREER_OPS_GMAIL_TOKEN_PATH=.career_ops/gmail_token.json
-CAREER_OPS_AI_PROVIDER=pydantic-ai
-CAREER_OPS_PYDANTIC_AI_MODEL=openai:gpt-5.2
-CAREER_OPS_OPENAI_API_KEY=
-CAREER_OPS_LOGFIRE_TOKEN=
-CAREER_OPS_LOGFIRE_BASE_URL=https://logfire-us.pydantic.dev
-CAREER_OPS_LOGFIRE_PROJECT=dillon-barendt/career-ops
-CAREER_OPS_EVENT_LOG_PATH=.career_ops/events.jsonl
-CAREER_OPS_STATE_PATH=.career_ops/state.json
+CAREER_FORGE_NOTION_TOKEN=secret_xxx
+CAREER_FORGE_GMAIL_ACCOUNT=dillon.barendt.jobs@gmail.com
+CAREER_FORGE_GMAIL_CREDENTIALS_PATH=.career_forge/gmail_credentials.json
+CAREER_FORGE_GMAIL_TOKEN_PATH=.career_forge/gmail_token.json
+CAREER_FORGE_AI_PROVIDER=pydantic-ai
+CAREER_FORGE_PYDANTIC_AI_MODEL=openai:gpt-5.2
+CAREER_FORGE_OPENAI_API_KEY=
+CAREER_FORGE_LOGFIRE_TOKEN=
+CAREER_FORGE_LOGFIRE_BASE_URL=https://logfire-us.pydantic.dev
+CAREER_FORGE_LOGFIRE_PROJECT=dillon-barendt/career-forge
+CAREER_FORGE_EVENT_LOG_PATH=.career_forge/events.jsonl
+CAREER_FORGE_STATE_PATH=.career_forge/state.json
+CAREER_FORGE_WEBHOOKS_ENABLED=true
+CAREER_FORGE_WEBHOOKS_PUBLIC_BASE_URL=https://hooks.concordmanage.com
+CAREER_FORGE_WEBHOOKS_DEFAULT_PROJECT=career-forge
+CAREER_FORGE_WEBHOOKS_NOTION_ENABLED=true
+CAREER_FORGE_WEBHOOKS_NOTION_SECRET=
+CAREER_FORGE_WEBHOOKS_MAX_BODY_BYTES=1048576
+CAREER_FORGE_WEBHOOKS_LOG_PAYLOADS=false
 ```
 
 `LOGFIRE_TOKEN` is also supported as a compatibility fallback, but
-`CAREER_OPS_LOGFIRE_TOKEN` is preferred for project-local configuration.
+`CAREER_FORGE_LOGFIRE_TOKEN` is preferred for project-local configuration.
 
 Gmail OAuth credentials and live Notion writes are intentionally manual setup
 steps. Dry-run commands work without live credentials.
@@ -101,7 +113,7 @@ To populate local secrets without echoing them in your shell history:
 
 ```bash
 scripts/configure_local_secrets.sh
-uv run career-ops check-setup
+uv run career-forge check-setup
 ```
 
 ## Fast Path: Local Dry Run
@@ -112,9 +124,9 @@ This is the intended first successful local workflow:
 uv sync --extra dev
 cp .env.example .env
 scripts/configure_local_secrets.sh
-uv run career-ops check-setup
-uv run career-ops ingest-gmail --dry-run
-uv run career-ops events --limit 20
+uv run career-forge check-setup
+uv run career-forge ingest-gmail --dry-run
+uv run career-forge events --limit 20
 ```
 
 ## Fast Path: First Live Notion Write
@@ -128,9 +140,9 @@ dry run -> inspect event log -> inspect mutation plan -> apply one write
 Current working commands:
 
 ```bash
-uv run career-ops ingest-gmail-message <gmail-message-id> --dry-run
-uv run career-ops events --limit 20
-uv run career-ops ingest-gmail-message <gmail-message-id> \
+uv run career-forge ingest-gmail-message <gmail-message-id> --dry-run
+uv run career-forge events --limit 20
+uv run career-forge ingest-gmail-message <gmail-message-id> \
   --no-dry-run \
   --mutation-index 0 \
   --confirm-message-id <gmail-message-id>
@@ -139,8 +151,8 @@ uv run career-ops ingest-gmail-message <gmail-message-id> \
 `ingest-gmail-message` does not advance the broad Gmail checkpoint and does not
 acknowledge the message as processed. Live mode applies exactly one indexed
 mutation and requires the message id to be repeated through
-`--confirm-message-id`. Dedicated `career-ops notion plan --latest` and
-`career-ops notion apply --latest` commands are still planned for broader replay
+`--confirm-message-id`. Dedicated `career-forge notion plan --latest` and
+`career-forge notion apply --latest` commands are still planned for broader replay
 workflows.
 
 ## Tonight Vertical Slice
@@ -165,24 +177,53 @@ Everything else should hang off this loop.
 Start every day with:
 
 ```bash
-career-ops today
+career-forge today
 ```
 
 Useful commands:
 
 ```bash
-career-ops ingest-url "https://jobs.lever.co/example/backend"
-career-ops evaluate "Senior Backend Engineer"
-career-ops review
-career-ops metrics
+career-forge ingest-url "https://jobs.lever.co/example/backend"
+career-forge evaluate "Senior Backend Engineer"
+career-forge review
+career-forge metrics
 ```
+
+## Webhook API
+
+The webhook API exposes a reusable route:
+
+```text
+POST /hooks/{project_name}/{source_name}
+```
+
+The first registered source is:
+
+```text
+https://hooks.concordmanage.com/career-forge/notion
+  -> http://localhost:<api-port>/hooks/career-forge/notion
+```
+
+Run locally with an ASGI server such as:
+
+```bash
+uv run uvicorn career_ops.api.app:app --reload
+```
+
+Then point ngrok or the reserved public domain `https://hooks.concordmanage.com`
+at the local FastAPI server. The route accepts arbitrary JSON objects, captures
+redacted headers and raw-body hashes, builds a deterministic dedupe key, runs a
+source verifier when configured, and returns a typed acknowledgement quickly.
+Notion verification currently reports `not_configured` unless
+`CAREER_FORGE_WEBHOOKS_NOTION_SECRET` is wired to a real provider verification
+scheme.
 
 ## Screenshots
 
 Screenshots are intentionally placeholders until the project has stable public
 demo data.
 
-- `docs/assets/career-ops-today.png` - planned CLI daily view
+- `docs/assets/career-forge-today.png` - planned CLI daily view
 - `docs/assets/notion-command-center.png` - planned Notion dashboard
 - `docs/assets/logfire-trace.png` - planned Logfire trace
 
@@ -242,5 +283,5 @@ Future:
 ## Data Safety
 
 Do not commit real job-search data, Gmail tokens, Notion tokens, resumes, or
-recruiter messages. Runtime state belongs under `.career_ops/`, which is ignored
+recruiter messages. Runtime state belongs under `.career_forge/`, which is ignored
 by Git.

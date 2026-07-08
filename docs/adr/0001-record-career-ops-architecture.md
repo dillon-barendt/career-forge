@@ -1,4 +1,4 @@
-# ADR 0001: Preserve Notion-Centered Career Ops Architecture
+# ADR 0001: Preserve Notion-Centered Career Forge Architecture
 
 Date: 2026-07-08
 
@@ -8,7 +8,7 @@ Accepted
 
 ## Context
 
-Career Ops automates a personal software engineering job search. The system
+Career Forge automates a personal software engineering job search. The system
 needs reliable tracking, low manual burden, and safe automation around private
 career data.
 

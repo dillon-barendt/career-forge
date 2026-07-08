@@ -1,6 +1,6 @@
 # Code of Conduct
 
-Career Ops follows a simple standard: be respectful, direct, and constructive.
+Career Forge follows a simple standard: be respectful, direct, and constructive.
 
 This project may become open source later. Until then, all collaboration should:
 

@@ -72,7 +72,7 @@ def _openai_check(settings: Settings) -> SetupCheck:
     return SetupCheck(
         name="OpenAI API key",
         ready=has_key,
-        detail="Configured." if has_key else "Set OPENAI_API_KEY or CAREER_OPS_OPENAI_API_KEY.",
+        detail="Configured." if has_key else "Set OPENAI_API_KEY or CAREER_FORGE_OPENAI_API_KEY.",
     )
 
 
@@ -105,6 +105,6 @@ def _notion_check(settings: Settings) -> SetupCheck:
         detail=(
             "Token and core database IDs are configured."
             if ready
-            else "Set CAREER_OPS_NOTION_TOKEN and core database IDs."
+            else "Set CAREER_FORGE_NOTION_TOKEN and core database IDs."
         ),
     )

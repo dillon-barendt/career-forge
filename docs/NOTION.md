@@ -27,13 +27,13 @@ before creating new ones.
 Create the integration in Notion's developer UI:
 
 1. Open `https://www.notion.so/profile/integrations`.
-2. Create an internal integration named `Career Ops`.
+2. Create an internal integration named `Career Forge`.
 3. Copy the internal integration secret.
 4. Share the Career Command Center page/databases with the integration.
 5. Add the token to ignored local `.env`:
 
 ```bash
-CAREER_OPS_NOTION_TOKEN=secret_xxx
+CAREER_FORGE_NOTION_TOKEN=secret_xxx
 ```
 
 The Notion connector used by Codex can read/write workspace pages, but it cannot
