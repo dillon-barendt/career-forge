@@ -1,5 +1,6 @@
 import json
 import os
+from pathlib import Path
 
 from pydantic import BaseModel, Field
 
@@ -77,18 +78,38 @@ def _openai_check(settings: Settings) -> SetupCheck:
 
 
 def _logfire_check(settings: Settings) -> SetupCheck:
-    has_token_or_local_auth = bool(os.getenv("LOGFIRE_TOKEN") or settings.logfire_token)
-    local_auth_exists = bool(settings.logfire_project and settings.logfire_base_url)
-    ready = has_token_or_local_auth or local_auth_exists
+    local_auth_project = _local_logfire_project()
+    has_token = bool(os.getenv("LOGFIRE_TOKEN") or settings.logfire_token)
+    ready = has_token or local_auth_project is not None or bool(
+        settings.logfire_project and settings.logfire_base_url
+    )
+    target = local_auth_project or f"{settings.logfire_project} at {settings.logfire_base_url}"
     return SetupCheck(
         name="Logfire",
         ready=ready,
         detail=(
-            f"Target {settings.logfire_project} at {settings.logfire_base_url}."
+            f"Target {target}."
             if ready
             else "Run logfire auth/projects use or set LOGFIRE_TOKEN."
         ),
     )
+
+
+def _local_logfire_project() -> str | None:
+    credentials_path = Path(".logfire/logfire_credentials.json")
+    if not credentials_path.exists():
+        return None
+    try:
+        payload = json.loads(credentials_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    project_url = payload.get("project_url")
+    if isinstance(project_url, str) and project_url:
+        return project_url
+    project_name = payload.get("project_name")
+    if isinstance(project_name, str) and project_name:
+        return project_name
+    return None
 
 
 def _notion_check(settings: Settings) -> SetupCheck:

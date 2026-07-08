@@ -33,7 +33,7 @@ from career_ops.scoring.fit_score import score_opportunity
 from career_ops.state.store import JsonStateStore
 from career_ops.workflows.interview_prep import build_interview_prep
 
-app = typer.Typer(help="Career Momentum System automation.")
+app = typer.Typer(help="Career Forge automation.")
 draft_app = typer.Typer(help="Generate local application materials.")
 app.add_typer(draft_app, name="draft")
 console = Console()

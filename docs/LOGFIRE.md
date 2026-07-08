@@ -11,6 +11,12 @@ logfire --base-url='https://logfire-us.pydantic.dev' auth
 logfire --base-url='https://logfire-us.pydantic.dev' projects use --org 'dillon-barendt' 'career-forge'
 ```
 
+Current hosted-project note: creating `dillon-barendt/career-forge` may fail
+with `Projects limit reached` until an old Logfire project is removed or the
+limit is raised. In that case, keep local Logfire auth pointed at the existing
+`dillon-barendt/career-ops` project and use `service_name="career-forge"` so
+new traces remain distinguishable.
+
 Production-style token:
 
 ```bash
@@ -22,7 +28,8 @@ export CAREER_FORGE_LOGFIRE_BASE_URL=https://logfire-us.pydantic.dev
 `LOGFIRE_TOKEN` is supported as a compatibility fallback by the runtime, but
 `CAREER_FORGE_LOGFIRE_TOKEN` is preferred for this project.
 
-Target project: `dillon-barendt/career-forge`
+Target project: `dillon-barendt/career-forge` when available. Temporary local
+fallback: `dillon-barendt/career-ops`.
 
 Target MCP server, if configured outside this repo:
 `https://logfire-us.pydantic.dev/mcp`
