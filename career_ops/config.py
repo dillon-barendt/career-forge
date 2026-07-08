@@ -83,6 +83,25 @@ class Settings(BaseSettings):
         default="openai:gpt-5.2",
         validation_alias=env_alias("PYDANTIC_AI_MODEL"),
     )
+    pydantic_ai_gateway_enabled: bool = Field(
+        default=False,
+        validation_alias=env_alias("PYDANTIC_AI_GATEWAY_ENABLED"),
+    )
+    pydantic_ai_gateway_api_key: SecretStr | None = Field(
+        default=None,
+        validation_alias=AliasChoices(
+            "CAREER_FORGE_PYDANTIC_AI_GATEWAY_API_KEY",
+            "PYDANTIC_AI_GATEWAY_API_KEY",
+        ),
+    )
+    pydantic_ai_gateway_provider: str = Field(
+        default="openai",
+        validation_alias=env_alias("PYDANTIC_AI_GATEWAY_PROVIDER"),
+    )
+    pydantic_ai_gateway_route: str | None = Field(
+        default=None,
+        validation_alias=env_alias("PYDANTIC_AI_GATEWAY_ROUTE"),
+    )
     openai_api_key: SecretStr | None = Field(
         default=None,
         validation_alias=AliasChoices(
@@ -126,6 +145,26 @@ class Settings(BaseSettings):
     logfire_service_name: str = Field(
         default="career-forge",
         validation_alias=env_alias("LOGFIRE_SERVICE_NAME"),
+    )
+    logfire_metrics_enabled: bool = Field(
+        default=True,
+        validation_alias=env_alias("LOGFIRE_METRICS_ENABLED"),
+    )
+    logfire_variables_enabled: bool = Field(
+        default=True,
+        validation_alias=env_alias("LOGFIRE_VARIABLES_ENABLED"),
+    )
+    logfire_instrument_httpx: bool = Field(
+        default=True,
+        validation_alias=env_alias("LOGFIRE_INSTRUMENT_HTTPX"),
+    )
+    logfire_instrument_openai: bool = Field(
+        default=True,
+        validation_alias=env_alias("LOGFIRE_INSTRUMENT_OPENAI"),
+    )
+    logfire_instrument_system_metrics: bool = Field(
+        default=False,
+        validation_alias=env_alias("LOGFIRE_INSTRUMENT_SYSTEM_METRICS"),
     )
     webhooks_enabled: bool = Field(default=True, validation_alias=env_alias("WEBHOOKS_ENABLED"))
     webhooks_public_base_url: str = Field(

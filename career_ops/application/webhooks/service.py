@@ -59,6 +59,12 @@ class WebhookIngestionService:
             payload=payload,
             raw_body_sha256=raw_hash,
         )
+        if self.observability is not None:
+            self.observability.increment(
+                "career_forge.webhooks.received",
+                project_name=route.project_name,
+                source_name=route.source_name,
+            )
         self._info(
             "career_ops.webhooks.received",
             envelope,
@@ -130,6 +136,16 @@ class WebhookIngestionService:
         *,
         duplicate: bool = False,
     ) -> WebhookProcessingResult:
+        duration_ms = (perf_counter() - started) * 1000
+        if self.observability is not None:
+            self.observability.record(
+                "career_forge.webhooks.duration_ms",
+                duration_ms,
+                project_name=envelope.project_name,
+                source_name=envelope.source_name,
+                processing_status=envelope.processing_status,
+                signature_status=envelope.signature_status,
+            )
         return WebhookProcessingResult(
             envelope=envelope,
             ack=WebhookAck(
@@ -141,7 +157,7 @@ class WebhookIngestionService:
                 processing_status=envelope.processing_status,
             ),
             duplicate=duplicate,
-            duration_ms=(perf_counter() - started) * 1000,
+            duration_ms=duration_ms,
         )
 
     def _span(self, name: str, envelope: WebhookEnvelope):

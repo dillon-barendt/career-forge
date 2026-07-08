@@ -17,10 +17,17 @@ Evals make prompt behavior measurable. Each case includes:
 - expected classification or score bounds
 - human-review expectation where relevant
 
-## Next Step
+## Run Evals
 
-Wrap the JSON files in `pydantic_evals.Dataset` and publish evaluation summaries
-to Logfire.
+Run:
+
+```bash
+career-forge evals
+```
+
+This wraps the JSON files in `pydantic_evals.Dataset`, runs deterministic local
+classifier/evaluator behavior against the fixtures, emits Logfire eval traces,
+records summary metrics, and appends `prompt_eval.completed` events locally.
 
 Feedback-loop cases should be generated from human overrides, failed
 classifications, scoring drift, and application outcomes. Add the case before

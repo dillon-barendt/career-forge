@@ -72,3 +72,33 @@ def test_pydantic_ai_service_loads_openai_key_from_settings(monkeypatch) -> None
         get_settings.cache_clear()
 
     assert isinstance(agent, FakeAgent)
+
+
+def test_pydantic_ai_service_uses_gateway_model_string(monkeypatch) -> None:
+    monkeypatch.setenv("CAREER_FORGE_PYDANTIC_AI_GATEWAY_ENABLED", "true")
+    monkeypatch.setenv("CAREER_FORGE_PYDANTIC_AI_GATEWAY_API_KEY", "pylf_test")
+    get_settings.cache_clear()
+
+    fake_module = ModuleType("pydantic_ai")
+
+    class FakeAgent:
+        def __init__(self, model, *args, **kwargs) -> None:
+            self.model = model
+
+        def run_sync(self, prompt: str):
+            raise AssertionError("Agent should not run in this test")
+
+    fake_module.Agent = FakeAgent
+    monkeypatch.setitem(sys.modules, "pydantic_ai", fake_module)
+
+    try:
+        agent = PydanticAIService(allow_local_fallback=False)._build_agent(
+            output_type=PydanticAIEmailEvaluation,
+            name="test_agent",
+            instructions="test",
+        )
+    finally:
+        get_settings.cache_clear()
+
+    assert isinstance(agent, FakeAgent)
+    assert agent.model == "gateway/openai:gpt-5.2"

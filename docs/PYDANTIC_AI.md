@@ -31,11 +31,36 @@ For tonight, use Pydantic AI with the OpenAI provider directly:
 OPENAI_API_KEY=sk-...
 ```
 
-Pydantic AI Gateway routing should remain behind this service boundary and can
-be added later when the gateway base URL/token are available.
+Pydantic AI Gateway routing stays behind the same service boundary:
+
+```bash
+CAREER_FORGE_PYDANTIC_AI_GATEWAY_ENABLED=true
+PYDANTIC_AI_GATEWAY_API_KEY=pylf_...
+CAREER_FORGE_PYDANTIC_AI_MODEL=openai:gpt-5.2
+```
+
+The service maps that model to `gateway/openai:gpt-5.2`. If a Gateway routing
+group exists, set `CAREER_FORGE_PYDANTIC_AI_GATEWAY_ROUTE` to its slug.
 
 ## Dry-Run Behavior
 
 When provider credentials are missing, the service falls back to deterministic
 local evaluation if `allow_local_fallback=True`. This keeps CLI dry-runs and
 tests usable without live model calls.
+
+## Observability
+
+Each classifier/evaluator call emits:
+
+- agent name
+- prompt version
+- model string
+- gateway enabled flag
+- confidence metric
+- deterministic fallback metric when used
+
+Prompt eval fixtures can be run with:
+
+```bash
+career-forge evals
+```

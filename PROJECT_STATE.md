@@ -1,6 +1,6 @@
 # Project State
 
-Version: `0.2.0`
+Version: `0.3.0`
 Last updated: 2026-07-08
 Status: Scaffold / vertical-slice development.
 
@@ -44,6 +44,7 @@ flowchart LR
 - Phase 3: Gmail to Pydantic AI to Notion production-shaped vertical slice scaffold.
 - Phase 4: Repository, documentation, OSS, and developer-experience foundation.
 - Phase 5: Career Forge rename and generic webhook intake foundation.
+- Phase 6: Logfire workspace integration for metrics, managed variables, Gateway routing, and eval runs.
 
 ## In-Progress Work
 

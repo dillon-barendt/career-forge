@@ -15,6 +15,7 @@ from career_ops.analytics.feedback_loop import FeedbackLoopReport, build_feedbac
 from career_ops.analytics.weekly import generate_weekly_analytics
 from career_ops.cache import LocalCache
 from career_ops.config import get_settings
+from career_ops.evals.runner import LogfireEvalRunner
 from career_ops.events.log import EventLog
 from career_ops.external_setup import check_external_setup
 from career_ops.gmail.client import GmailOAuthClient
@@ -65,6 +66,12 @@ def config() -> None:
     table.add_row("Gmail account", settings.gmail_account)
     table.add_row("AI provider", settings.ai_provider)
     table.add_row("Pydantic AI model", settings.pydantic_ai_model)
+    table.add_row(
+        "Pydantic AI Gateway",
+        "enabled" if settings.pydantic_ai_gateway_enabled else "disabled",
+    )
+    table.add_row("Gateway provider", settings.pydantic_ai_gateway_provider)
+    table.add_row("Gateway route", settings.pydantic_ai_gateway_route or "default")
     table.add_row("OpenAI API key", "set" if settings.openai_api_key else "missing")
     table.add_row(
         "Logfire token",
@@ -73,6 +80,11 @@ def config() -> None:
     table.add_row("Logfire project", settings.logfire_project)
     table.add_row("Logfire base URL", settings.logfire_base_url)
     table.add_row("Logfire service", settings.logfire_service_name)
+    table.add_row("Logfire metrics", "enabled" if settings.logfire_metrics_enabled else "disabled")
+    table.add_row(
+        "Logfire variables",
+        "enabled" if settings.logfire_variables_enabled else "disabled",
+    )
     table.add_row("Event log", str(settings.event_log_path))
     table.add_row("State path", str(settings.state_path))
     console.print(table)
@@ -424,6 +436,51 @@ def feedback(
     if emit_logfire:
         _emit_feedback_to_logfire(report)
     _print_feedback_report(report)
+
+
+@app.command("evals")
+def run_evals(
+    emit_logfire: Annotated[
+        bool,
+        typer.Option(help="Emit eval summaries and metrics to Logfire."),
+    ] = True,
+) -> None:
+    """Run prompt eval fixtures and publish summaries to Logfire."""
+
+    settings = get_settings()
+    observability = _observability() if emit_logfire else None
+    summaries = LogfireEvalRunner(observability=observability).run_all()
+
+    event_log = EventLog(settings.event_log_path)
+    table = Table(title="Career Forge Evals")
+    table.add_column("Dataset")
+    table.add_column("Prompt")
+    table.add_column("Cases")
+    table.add_column("Passed")
+    table.add_column("Failed")
+    table.add_column("Pass Rate")
+    for summary in summaries:
+        event_log.append(
+            event_type=EventType.PROMPT_EVAL_COMPLETED,
+            source="evals",
+            source_id=summary.dataset_name,
+            data={
+                "prompt_version": summary.prompt_version,
+                "cases": summary.cases,
+                "passed": summary.passed,
+                "failed": summary.failed,
+                "pass_rate": summary.pass_rate,
+            },
+        )
+        table.add_row(
+            summary.dataset_name,
+            summary.prompt_version,
+            str(summary.cases),
+            str(summary.passed),
+            str(summary.failed),
+            f"{summary.pass_rate:.0%}",
+        )
+    console.print(table)
 
 
 @app.command()

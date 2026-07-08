@@ -31,12 +31,16 @@ Target MCP server, if configured outside this repo:
 
 - Gmail polling
 - Gmail message processing
+- FastAPI webhook requests
+- outbound HTTPX calls
+- OpenAI/Pydantic AI model calls
 - Pydantic AI email classification
 - Pydantic AI opportunity evaluation
 - Notion mutation planning/execution
 - retry/error events
 - feedback-loop metrics and alerts
 - webhook receipt, verification, dedupe, handler, and failure events
+- prompt eval runs from `career-forge evals`
 
 `Observability.configure()` calls `logfire.configure()` and
 `logfire.instrument_pydantic_ai()` when Logfire is installed and configured.
@@ -44,6 +48,52 @@ It passes `service_name="career-forge"` and
 `advanced=logfire.AdvancedOptions(base_url="https://logfire-us.pydantic.dev")`.
 Pydantic AI content capture is disabled by default to avoid sending email or job
 posting text as trace content.
+
+## Metrics And Variables
+
+Career Forge registers these Logfire metrics when
+`CAREER_FORGE_LOGFIRE_METRICS_ENABLED=true`:
+
+| Metric | Type | Purpose |
+| --- | --- | --- |
+| `career_forge.ai.requests` | counter | AI classifier/evaluator calls by agent and prompt version |
+| `career_forge.ai.fallbacks` | counter | deterministic fallback usage |
+| `career_forge.ai.confidence` | histogram | AI confidence scores |
+| `career_forge.webhooks.received` | counter | webhook receipts by project/source |
+| `career_forge.webhooks.duration_ms` | histogram | webhook ingestion latency |
+| `career_forge.evals.cases` | counter | eval cases executed |
+| `career_forge.evals.pass_rate` | histogram | eval dataset pass rates |
+
+Managed variables are enabled with
+`CAREER_FORGE_LOGFIRE_VARIABLES_ENABLED=true`. The current code defines:
+
+- `career_forge.ai.gateway_enabled`
+- `career_forge.ai.local_fallback_enabled`
+- `career_forge.webhooks.enabled`
+
+These variables let Logfire control runtime behavior without redeploying once
+remote variables are configured in the Logfire UI.
+
+## AI Gateway
+
+Direct OpenAI remains the default. To route Pydantic AI calls through Pydantic
+AI Gateway:
+
+```bash
+export CAREER_FORGE_PYDANTIC_AI_GATEWAY_ENABLED=true
+export PYDANTIC_AI_GATEWAY_API_KEY=<gateway-key>
+export CAREER_FORGE_PYDANTIC_AI_MODEL=openai:gpt-5.2
+```
+
+Career Forge converts `openai:gpt-5.2` to the Gateway model string
+`gateway/openai:gpt-5.2`. If a Logfire Gateway routing group exists, set:
+
+```bash
+export CAREER_FORGE_PYDANTIC_AI_GATEWAY_ROUTE=<routing-group-slug>
+```
+
+The service then uses `gateway_provider(..., route=...)` for route-specific
+failover/load-balancing.
 
 ## Verification
 
@@ -83,6 +133,18 @@ Use those observations to alert on low-confidence spikes, prompt regressions,
 source conversion problems, Gmail/Notion failures, and scoring drift. See
 [Feedback Loop](FEEDBACK_LOOP.md) for alert thresholds and the improvement
 policy.
+
+## Prompt Evals
+
+Run local deterministic prompt evals and publish summaries to Logfire:
+
+```bash
+career-forge evals
+```
+
+This wraps the JSON fixtures under `evals/` with `pydantic_evals.Dataset`,
+emits Pydantic Evals traces, writes `prompt_eval.completed` events to the local
+event log, and records eval metrics in Logfire.
 
 ## Webhook Channels
 

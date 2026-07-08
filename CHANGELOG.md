@@ -2,6 +2,22 @@
 
 All notable changes to Career Forge are tracked here.
 
+## 0.3.0 - 2026-07-08
+
+### Added
+
+- Logfire metrics catalog for AI requests, fallback usage, confidence, webhook volume/latency, eval cases, and eval pass rates.
+- Logfire managed variables for AI Gateway enablement, local AI fallback behavior, and webhook enablement.
+- FastAPI, HTTPX, OpenAI, Pydantic AI, and optional system-metrics instrumentation through the shared observability wrapper.
+- Pydantic AI Gateway settings, including direct Gateway API key support and optional routing group support.
+- `career-forge evals` command that wraps JSON fixtures with `pydantic_evals.Dataset`, emits Logfire eval traces, records metrics, and appends `prompt_eval.completed` events.
+
+### Changed
+
+- AI classifier/evaluator spans now include agent name, prompt version, model, Gateway status, confidence metrics, and fallback metrics.
+- Webhook ingestion now records receipt and duration metrics.
+- Eval dataset names now use `career_forge_*`.
+
 ## 0.2.0 - 2026-07-08
 
 ### Added

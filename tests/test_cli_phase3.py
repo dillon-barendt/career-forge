@@ -21,6 +21,7 @@ def test_phase3_cli_commands_run_in_safe_dry_mode(tmp_path, monkeypatch) -> None
     assert runner.invoke(app, ["events"]).exit_code == 0
     assert runner.invoke(app, ["evaluate", "example-opportunity"]).exit_code == 0
     assert runner.invoke(app, ["feedback"]).exit_code == 0
+    assert runner.invoke(app, ["evals", "--no-emit-logfire"]).exit_code == 0
     get_settings.cache_clear()
 
 

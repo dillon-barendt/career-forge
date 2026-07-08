@@ -22,6 +22,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(title="Career Forge Webhooks")
     app.state.webhook_service = service
     app.include_router(webhooks_router)
+    observability.instrument_fastapi(app)
     return app
 
 

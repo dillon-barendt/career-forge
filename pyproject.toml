@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "career-forge"
-version = "0.2.0"
+version = "0.3.0"
 description = "Local career automation with Gmail, Pydantic AI, Logfire, Notion, and webhooks."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -17,6 +17,7 @@ dependencies = [
   "logfire>=4.37.0",
   "pydantic>=2.7.0",
   "pydantic-ai>=2.6.0",
+  "pydantic-evals>=1.16.0",
   "pydantic-settings>=2.3.0",
   "rich>=13.7.0",
   "typer>=0.12.0",

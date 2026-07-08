@@ -84,3 +84,21 @@ def test_external_setup_logfire_check_accepts_project_config_without_token() -> 
     logfire = next(item for item in report.items if item.name == "Logfire")
 
     assert logfire.ready is True
+
+
+def test_external_setup_requires_gateway_key_when_enabled() -> None:
+    report = check_external_setup(
+        Settings(
+            pydantic_ai_gateway_enabled=True,
+            openai_api_key="sk-test",
+            notion_token="secret_test",
+            opportunities_database_id="opportunities",
+            companies_database_id="companies",
+            contacts_database_id="contacts",
+            applications_database_id="applications",
+        )
+    )
+
+    gateway = next(item for item in report.items if item.name == "Pydantic AI Gateway")
+
+    assert gateway.ready is False

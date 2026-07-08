@@ -64,6 +64,7 @@ Reads recent append-only workflow events from `.career_forge/events.jsonl`.
 ```bash
 career-forge feedback
 career-forge feedback --emit-logfire
+career-forge evals
 career-forge record-outcome app_123 interview --source Recruiter
 career-forge record-override msg_123 "Company Communication" "Recruiter Outreach" \
   --prompt-version email-classifier-v1

@@ -25,6 +25,7 @@ def check_external_setup(settings: Settings) -> ExternalSetupReport:
     items = [
         _gmail_credentials_check(settings),
         _openai_check(settings),
+        _gateway_check(settings),
         _logfire_check(settings),
         _notion_check(settings),
     ]
@@ -91,6 +92,27 @@ def _logfire_check(settings: Settings) -> SetupCheck:
             f"Target {target}."
             if ready
             else "Run logfire auth/projects use or set LOGFIRE_TOKEN."
+        ),
+    )
+
+
+def _gateway_check(settings: Settings) -> SetupCheck:
+    if not settings.pydantic_ai_gateway_enabled:
+        return SetupCheck(
+            name="Pydantic AI Gateway",
+            ready=True,
+            detail="Disabled; direct provider credentials will be used.",
+        )
+    has_key = bool(
+        os.getenv("PYDANTIC_AI_GATEWAY_API_KEY") or settings.pydantic_ai_gateway_api_key
+    )
+    return SetupCheck(
+        name="Pydantic AI Gateway",
+        ready=has_key,
+        detail=(
+            f"Enabled for {settings.pydantic_ai_gateway_provider}."
+            if has_key
+            else "Set PYDANTIC_AI_GATEWAY_API_KEY or CAREER_FORGE_PYDANTIC_AI_GATEWAY_API_KEY."
         ),
     )
 

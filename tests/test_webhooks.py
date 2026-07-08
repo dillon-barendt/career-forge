@@ -26,6 +26,12 @@ class RecordingObservability:
     def error(self, message: str, **attributes: object) -> None:
         self.errors.append((message, attributes))
 
+    def increment(self, name: str, value: int = 1, **attributes: object) -> None:
+        return None
+
+    def record(self, name: str, value: float, **attributes: object) -> None:
+        return None
+
     def span(self, name: str, **attributes: object):
         class Span:
             def __enter__(self) -> None:
