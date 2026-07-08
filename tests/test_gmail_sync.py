@@ -17,6 +17,11 @@ class FakeGmailClient:
         self.acknowledged.append(message_id)
 
 
+class FakeNotionGateway:
+    def upsert(self, mutation) -> str:
+        return f"page:{mutation.dedupe_key}"
+
+
 class FakeStateStore:
     def __init__(self) -> None:
         self.processed: set[str] = set()
@@ -48,7 +53,11 @@ def test_gmail_sync_processes_new_messages_and_skips_processed(tmp_path) -> None
     state = FakeStateStore()
     client = FakeGmailClient([message])
     event_log = EventLog(tmp_path / "events.jsonl")
-    notion_executor = NotionUpsertExecutor(gateway=None, event_log=event_log, dry_run=True)
+    notion_executor = NotionUpsertExecutor(
+        gateway=FakeNotionGateway(),
+        event_log=event_log,
+        dry_run=False,
+    )
     service = GmailSyncService(
         gmail_client=client,
         state_store=state,
@@ -64,3 +73,32 @@ def test_gmail_sync_processes_new_messages_and_skips_processed(tmp_path) -> None
     assert second.skipped == 1
     assert client.acknowledged == ["msg_1"]
     assert state.checkpoint == "msg_1"
+
+
+def test_gmail_sync_dry_run_does_not_acknowledge_or_checkpoint(tmp_path) -> None:
+    message = EmailMessage(
+        message_id="msg_1",
+        thread_id="thread_1",
+        sender="Sam Recruiter <sam@acme.com>",
+        recipients=["dillon.barendt.jobs@gmail.com"],
+        subject="Interview invitation for Backend Engineer at Acme",
+        body="We would like to schedule a technical interview.",
+        received_at="2026-07-07T16:00:00Z",
+    )
+    state = FakeStateStore()
+    client = FakeGmailClient([message])
+    event_log = EventLog(tmp_path / "events.jsonl")
+    notion_executor = NotionUpsertExecutor(gateway=None, event_log=event_log, dry_run=True)
+    service = GmailSyncService(
+        gmail_client=client,
+        state_store=state,
+        event_log=event_log,
+        notion_executor=notion_executor,
+    )
+
+    result = service.sync(labels=["INBOX"])
+
+    assert result.processed == 1
+    assert client.acknowledged == []
+    assert state.checkpoint is None
+    assert state.processed == set()

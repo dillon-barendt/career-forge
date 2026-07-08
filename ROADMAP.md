@@ -25,7 +25,7 @@
 - append-only event log
 - Notion upsert executor and HTTP gateway
 - prompt/eval assets
-- live external credential validation remains part of Phase 5
+- live external credential validation moved to the Phase 8/9 operator workflow
 
 ### Phase 4: Repository and OSS Foundation
 
@@ -35,22 +35,54 @@
 - pre-commit, EditorConfig, Ruff, Pytest, UV
 - expanded documentation, examples, ADRs, project state, and release checklist
 
-## Recommended Phase 5: Vertical Slice Hardening
+### Phase 5: Career Forge Rename and Webhook Foundation
 
-1. Finish typed settings and setup validation for local credentials.
-2. Run Gmail dry-run ingestion against the dedicated inbox.
-3. Lock the email classification schema and confidence thresholds.
-4. Verify append-only event log replay/debug behavior with real messages.
-5. Validate Notion mutation planner output against the live schema.
-6. Use `career-forge ingest-gmail-message` for single-message dry-run review.
-7. Execute the first live Notion upsert from one selected Gmail message mutation.
-8. Expand Logfire trace coverage across Gmail, classification, planning, and writes.
-9. Wrap JSON eval datasets with a runnable eval harness.
+- package and CLI rename from Career Ops to Career Forge
+- provider-neutral webhook intake route
+- Notion webhook source scaffold
+- compatibility aliases for older `CAREER_OPS_*` env vars
+
+### Phase 6: Logfire Workspace Integration
+
+- metrics and managed variables
+- Pydantic AI Gateway routing settings
+- eval run traces
+- provider and webhook observability wiring
+
+### Phase 7: Logfire Catalog Sync
+
+- catalog records for agents, prompts, LLM routes, and providers
+- `career-forge logfire-sync`
+- catalog metric coverage
+
+### Phase 8: Replayable Operator Loop Hardening
+
+- `career-forge setup validate`
+- non-mutating `career-forge ingest-gmail --dry-run`
+- single-message Gmail inspection through `career-forge ingest-gmail-message`
+- append-only event records with replay metadata
+- typed Gmail classification contract and malformed-output fallback
+- `career-forge notion plan --latest`
+- `career-forge notion apply --latest --dry-run`
+- low-confidence apply refusal for replayed plans
+- Notion `Dedupe Key` schema validation before live apply
+- Gmail, classification, mutation, and replay Logfire metrics
+- expanded eval summaries and classifier fixtures
+- `career-forge run-once --dry-run`
+
+## Recommended Phase 9: Live Validation and Reviewed Apply
+
+1. Run the Phase 8 loop against the real dedicated Gmail inbox.
+2. Validate target Notion databases include `Dedupe Key` rich-text properties.
+3. Execute one reviewed live Notion apply with `--no-dry-run --confirm`.
+4. Add explicit reviewed-plan metadata for future `run-once --apply-reviewed`.
+5. Configure local launchd or cron for `career-forge run-once --dry-run`.
+6. Add hosted Logfire alert policies for failures and confidence drift.
+7. Keep broad live sync disabled until the single-message path is validated.
 
 ## Later Platform Work
 
-- Add a scheduled runner for `career-forge ingest-gmail --no-dry-run`.
-- Add a replay command for failed Notion mutation events.
+- Add hosted or durable scheduling for reviewed, non-dry-run operation.
 - Publish eval summaries and prompt-version metrics to Logfire.
 - Add provider-specific API extraction for Greenhouse, Lever, Ashby, Workday.
 - Add Gmail history-id polling for high-volume inboxes.

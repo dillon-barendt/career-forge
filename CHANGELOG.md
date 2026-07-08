@@ -2,6 +2,38 @@
 
 All notable changes to Career Forge are tracked here.
 
+## 0.5.0 - Unreleased
+
+### Added
+
+- `career-forge setup validate` for typed local operator configuration checks
+  with secret redaction and suggested fixes.
+- Replayable Notion mutation inspection and dry-run apply commands:
+  `career-forge notion plan --latest` and
+  `career-forge notion apply --latest --dry-run`.
+- `career-forge run-once --dry-run` as a minimal local scheduled-runner
+  foundation.
+- Phase 8 Gmail classification contract, append-only event replay metadata, and
+  Notion failed-mutation replay eligibility.
+- Notion schema validation for required `Dedupe Key` rich-text properties before
+  live apply.
+- Logfire metric registration for Gmail message outcomes, Notion mutation
+  outcomes, and operator replay commands.
+- Expanded email classifier eval cases and eval summary metadata.
+
+### Changed
+
+- Broad Gmail dry-runs no longer acknowledge messages, advance checkpoints, or
+  mark local state as processed.
+- Notion planned events now include serialized mutation payloads for replay.
+- Eval command output includes the model/route and appends `eval.completed`
+  while preserving `prompt_eval.completed`.
+
+### Fixed
+
+- Malformed AI email classification output now falls back to a structured local
+  classification instead of crashing the operator loop.
+
 ## 0.4.0 - 2026-07-08
 
 ### Added

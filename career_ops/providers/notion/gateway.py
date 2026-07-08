@@ -4,6 +4,7 @@ import httpx
 
 from career_ops.config import Settings
 from career_ops.models import NotionMutation
+from career_ops.providers.notion.executor import NotionSchemaValidationResult
 
 
 class NotionGatewayError(RuntimeError):
@@ -47,6 +48,40 @@ class NotionHttpGateway:
             msg = "Notion upsert response did not include a page id."
             raise NotionGatewayError(msg)
         return page_id
+
+    def validate_database_schema(self, database: str) -> NotionSchemaValidationResult:
+        database_id = self._database_id(database)
+        response = self._client.get(f"/databases/{database_id}")
+        if response.is_error:
+            return NotionSchemaValidationResult(
+                database=database,
+                ok=False,
+                errors=[f"Notion API {response.status_code}: {response.text}"],
+            )
+        properties = response.json().get("properties", {})
+        if not isinstance(properties, dict):
+            return NotionSchemaValidationResult(
+                database=database,
+                ok=False,
+                errors=["Notion database response did not include a properties object."],
+            )
+        dedupe = properties.get("Dedupe Key")
+        if not isinstance(dedupe, dict):
+            return NotionSchemaValidationResult(
+                database=database,
+                ok=False,
+                errors=["Database is missing required rich_text property: Dedupe Key"],
+            )
+        property_type = dedupe.get("type")
+        if property_type != "rich_text":
+            return NotionSchemaValidationResult(
+                database=database,
+                ok=False,
+                errors=[
+                    f"Dedupe Key must be a rich_text property but is {property_type or 'unknown'}."
+                ],
+            )
+        return NotionSchemaValidationResult.valid(database=database)
 
     def close(self) -> None:
         self._client.close()

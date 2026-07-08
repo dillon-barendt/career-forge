@@ -2,11 +2,11 @@
 
 These are documented ideas, not current implementation.
 
-## Phase 5 Candidates
+## Phase 9 Candidates
 
-- scheduled Gmail polling
-- Notion mutation replay
-- pydantic-evals runner
+- live validation of the Phase 8 operator loop
+- reviewed-plan metadata for safe non-dry-run scheduling
+- launchd/cron wiring beyond the current `run-once --dry-run` command
 - richer ATS extractors
 - calendar integration
 - interview agent

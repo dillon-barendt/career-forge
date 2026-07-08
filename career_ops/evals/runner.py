@@ -20,6 +20,7 @@ from career_ops.observability import Observability
 class EvalRunSummary:
     dataset_name: str
     prompt_version: str
+    model_route: str
     cases: int
     passed: int
     failed: int
@@ -166,6 +167,7 @@ class LogfireEvalRunner:
         summary = EvalRunSummary(
             dataset_name=dataset_name,
             prompt_version=prompt_version,
+            model_route=self.ai_service.model,
             cases=len(cases),
             passed=passed,
             failed=len(cases) - passed,

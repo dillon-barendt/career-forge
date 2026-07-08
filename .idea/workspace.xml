@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="ALL" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="306f0f6c-6b8f-4b5e-97c7-879cf852aef1" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/AGENTS.md" beforeDir="false" afterPath="$PROJECT_DIR$/AGENTS.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ARCHITECTURE.md" beforeDir="false" afterPath="$PROJECT_DIR$/ARCHITECTURE.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/AUTOMATIONS.md" beforeDir="false" afterPath="$PROJECT_DIR$/AUTOMATIONS.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CHANGELOG.md" beforeDir="false" afterPath="$PROJECT_DIR$/CHANGELOG.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/DATA_MODEL.md" beforeDir="false" afterPath="$PROJECT_DIR$/DATA_MODEL.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PROJECT_STATE.md" beforeDir="false" afterPath="$PROJECT_DIR$/PROJECT_STATE.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ROADMAP.md" beforeDir="false" afterPath="$PROJECT_DIR$/ROADMAP.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/career_ops/ai/pydantic_ai_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/career_ops/ai/pydantic_ai_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/career_ops/cli.py" beforeDir="false" afterPath="$PROJECT_DIR$/career_ops/cli.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/career_ops/evals/runner.py" beforeDir="false" afterPath="$PROJECT_DIR$/career_ops/evals/runner.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/career_ops/events/log.py" beforeDir="false" afterPath="$PROJECT_DIR$/career_ops/events/log.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/career_ops/gmail/single_message.py" beforeDir="false" afterPath="$PROJECT_DIR$/career_ops/gmail/single_message.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/career_ops/gmail/sync.py" beforeDir="false" afterPath="$PROJECT_DIR$/career_ops/gmail/sync.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/career_ops/models/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/career_ops/models/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/career_ops/observability.py" beforeDir="false" afterPath="$PROJECT_DIR$/career_ops/observability.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/career_ops/providers/notion/executor.py" beforeDir="false" afterPath="$PROJECT_DIR$/career_ops/providers/notion/executor.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/career_ops/providers/notion/gateway.py" beforeDir="false" afterPath="$PROJECT_DIR$/career_ops/providers/notion/gateway.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/career_ops/providers/notion/mutations.py" beforeDir="false" afterPath="$PROJECT_DIR$/career_ops/providers/notion/mutations.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/CLI.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/CLI.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/FUTURE_PHASES.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/FUTURE_PHASES.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/GMAIL.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/GMAIL.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/NOTION.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/NOTION.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/evals/email_classifier_cases.json" beforeDir="false" afterPath="$PROJECT_DIR$/evals/email_classifier_cases.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_gmail_sync.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_gmail_sync.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_observability.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_observability.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="EmbeddingIndexingInfo">
+    <option name="cachedIndexableFilesCount" value="185" />
+    <option name="fileBasedEmbeddingIndicesEnabled" value="true" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;dillon-barendt&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/dillon-barendt/career-forge.git&quot;,
+    &quot;accountId&quot;: &quot;d21a6556-a82e-49a8-ba94-15df9b4d27d7&quot;
+  }
+}</component>
+  <component name="McpProjectServerCommands">
+    <commands />
+    <urls />
+  </component>
+  <component name="NextEditCompletionFeaturesState">
+    <decayedCancelled>
+      <entry key="MS100" value="2.401522151419261" />
+      <entry key="MS500" value="6.400567947225852" />
+      <entry key="S2" value="10.125604697501444" />
+      <entry key="S5" value="13.738131570560402" />
+      <entry key="S10" value="16.212013880951012" />
+      <entry key="S30" value="18.549388001339732" />
+      <entry key="S60" value="19.248271275781672" />
+      <entry key="M2" value="19.724692624905547" />
+      <entry key="M5" value="23.33812597466341" />
+      <entry key="M10" value="31.182093306015858" />
+      <entry key="M15" value="36.6381969446742" />
+      <entry key="M30" value="44.77997286500815" />
+      <entry key="H1" value="50.267126518632686" />
+      <entry key="H2" value="53.460790578548014" />
+      <entry key="H4" value="55.18485246595775" />
+      <entry key="D1" value="56.69093948470335" />
+      <entry key="W1" value="56.955685610588404" />
+    </decayedCancelled>
+    <decayedSelected>
+      <entry key="MS100" value="0.0" />
+      <entry key="MS500" value="0.0" />
+      <entry key="S2" value="4.320377946150435E-269" />
+      <entry key="S5" value="4.510333924051066E-108" />
+      <entry key="S10" value="2.1237546760516053E-54" />
+      <entry key="S30" value="1.2853896028384144E-18" />
+      <entry key="S60" value="1.1337502382969627E-9" />
+      <entry key="M2" value="3.3671207853252916E-5" />
+      <entry key="M5" value="0.016251875185017917" />
+      <entry key="M10" value="0.12748284270841267" />
+      <entry key="M15" value="0.2532995934589454" />
+      <entry key="M30" value="0.5032887774021444" />
+      <entry key="H1" value="0.7094284864608587" />
+      <entry key="H2" value="0.8422757781515859" />
+      <entry key="H4" value="0.9177558379828394" />
+      <entry key="D1" value="0.985797833350434" />
+      <entry key="W1" value="0.9979586602919412" />
+    </decayedSelected>
+    <decayedShown>
+      <entry key="MS100" value="2.32140103215852" />
+      <entry key="MS500" value="6.356824790492195" />
+      <entry key="S2" value="10.10128530912068" />
+      <entry key="S5" value="13.712943453128013" />
+      <entry key="S10" value="16.192374319021305" />
+      <entry key="S30" value="18.540355970819938" />
+      <entry key="S60" value="19.24336402429363" />
+      <entry key="M2" value="19.722160229204405" />
+      <entry key="M5" value="23.353062037165344" />
+      <entry key="M10" value="31.308197771593857" />
+      <entry key="M15" value="36.89006329163188" />
+      <entry key="M30" value="45.282044982450245" />
+      <entry key="H1" value="50.975742942445855" />
+      <entry key="H2" value="54.30259501165341" />
+      <entry key="H4" value="56.10235412051531" />
+      <entry key="D1" value="57.67669217688138" />
+      <entry key="W1" value="57.95363775128242" />
+    </decayedShown>
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 2,
+  &quot;fromUser&quot;: false
+}</component>
+  <component name="ProjectId" id="3GDwhKmZ9e6LOScHunZxTkGY0Nw" />
+  <component name="ProjectViewState">
+    <option name="autoscrollToSource" value="true" />
+    <option name="compactDirectories" value="true" />
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="openDirectoriesWithSingleClick" value="true" />
+    <option name="showLibraryContents" value="true" />
+    <option name="showScratchesAndConsoles" value="false" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;SHELLCHECK.PATH&quot;: &quot;/Users/dillonbarendt/Library/Application Support/JetBrains/PyCharm2026.1/plugins/Shell Script/shellcheck&quot;,
+    &quot;Shell Script.configure_local_secrets.sh.executor&quot;: &quot;Run&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/dillonbarendt/Documents/Codex/2026-07-07/computer-plugin-computer-use-openai-bundled/career-ops&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;org.jetbrains.plugins.github.ui.GithubSettingsConfigurable&quot;,
+    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  }
+}</component>
+  <component name="RecapUselessUpdatesCounter">
+    <option name="suspendCountdown" value="9" />
+  </component>
+  <component name="RunManager">
+    <configuration name="configure_local_secrets.sh" type="ShConfigurationType" temporary="true">
+      <option name="SCRIPT_TEXT" value="" />
+      <option name="INDEPENDENT_SCRIPT_PATH" value="true" />
+      <option name="SCRIPT_PATH" value="$PROJECT_DIR$/scripts/configure_local_secrets.sh" />
+      <option name="SCRIPT_OPTIONS" value="" />
+      <option name="INDEPENDENT_SCRIPT_WORKING_DIRECTORY" value="true" />
+      <option name="SCRIPT_WORKING_DIRECTORY" value="$PROJECT_DIR$/scripts" />
+      <option name="INDEPENDENT_INTERPRETER_PATH" value="true" />
+      <option name="INTERPRETER_PATH" value="/usr/bin/env" />
+      <option name="INTERPRETER_OPTIONS" value="bash" />
+      <option name="EXECUTE_IN_TERMINAL" value="true" />
+      <option name="EXECUTE_SCRIPT_FILE" value="true" />
+      <envs />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Shell Script.configure_local_secrets.sh" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-d6986cc7102b-31caf2ab9e3c-JavaScript-PY-261.26222.68" />
+        <option value="bundled-python-sdk-50341a9f1f9c-c2ffad84badb-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-261.26222.68" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="306f0f6c-6b8f-4b5e-97c7-879cf852aef1" name="Changes" comment="" />
+      <created>1783519565772</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1783519565772</updated>
+      <workItem from="1783519567130" duration="6764000" />
+      <workItem from="1783531311164" duration="2671000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>

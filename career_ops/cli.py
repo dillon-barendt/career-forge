@@ -26,17 +26,30 @@ from career_ops.logfire_catalog import emit_logfire_catalog, full_catalog
 from career_ops.materials.cover_letter import build_cover_letter
 from career_ops.materials.recruiter_dm import build_recruiter_dm
 from career_ops.materials.resume_tailor import build_resume_tailoring_notes
-from career_ops.models import EmailMessage, EventType, JobPosting, WeeklyAnalyticsInput
+from career_ops.models import (
+    EmailMessage,
+    EventType,
+    GmailSyncResult,
+    JobPosting,
+    NotionMutation,
+    WeeklyAnalyticsInput,
+)
 from career_ops.notion.schemas import JobOpportunity
 from career_ops.observability import Observability
+from career_ops.operator_loop import NotionReplayError, NotionReplayService
 from career_ops.providers.notion.executor import NotionUpsertExecutor
 from career_ops.providers.notion.gateway import NotionHttpGateway
 from career_ops.scoring.fit_score import score_opportunity
+from career_ops.setup_validation import SetupValidationReport, validate_setup
 from career_ops.state.store import JsonStateStore
 from career_ops.workflows.interview_prep import build_interview_prep
 
 app = typer.Typer(help="Career Forge automation.")
+setup_app = typer.Typer(help="Validate local operator setup.")
+notion_app = typer.Typer(help="Inspect and replay Notion mutation plans.")
 draft_app = typer.Typer(help="Generate local application materials.")
+app.add_typer(setup_app, name="setup")
+app.add_typer(notion_app, name="notion")
 app.add_typer(draft_app, name="draft")
 console = Console()
 
@@ -103,6 +116,14 @@ def check_setup() -> None:
     for item in report.items:
         table.add_row(item.name, "yes" if item.ready else "no", item.detail)
     console.print(table)
+
+
+@setup_app.command("validate")
+def setup_validate() -> None:
+    """Validate local operator configuration without printing secrets."""
+
+    report = validate_setup(get_settings())
+    _print_setup_validation(report)
 
 
 @app.command()
@@ -175,35 +196,8 @@ def ingest_gmail(
 ) -> None:
     """Poll Gmail, classify messages, and plan or execute Notion mutations."""
 
-    settings = get_settings()
-    observability = _observability()
-    event_log = EventLog(settings.event_log_path)
-    notion_executor = NotionUpsertExecutor(
-        gateway=None if dry_run else NotionHttpGateway(settings),
-        event_log=event_log,
-        dry_run=dry_run,
-        observability=observability,
-    )
-    gmail_client = _gmail_client(dry_run=dry_run)
-    service = GmailSyncService(
-        gmail_client=gmail_client,
-        state_store=JsonStateStore(settings.state_path),
-        event_log=event_log,
-        notion_executor=notion_executor,
-        observability=observability,
-    )
-    result = service.sync(labels=["INBOX"])
-    table = Table(title="Gmail Sync")
-    table.add_column("Metric")
-    table.add_column("Value")
-    table.add_row("Fetched", str(result.fetched))
-    table.add_row("Processed", str(result.processed))
-    table.add_row("Skipped", str(result.skipped))
-    table.add_row("Failed", str(result.failed))
-    table.add_row("Mutations planned", str(result.mutations_planned))
-    table.add_row("Mutations executed", str(result.mutations_executed))
-    table.add_row("Dry run", "yes" if dry_run else "no")
-    console.print(table)
+    result, event_log_path = _run_gmail_sync(dry_run=dry_run)
+    _print_gmail_sync_result(result, dry_run=dry_run, event_log_path=event_log_path)
 
 
 @app.command("ingest-gmail-message")
@@ -270,6 +264,85 @@ def sync_notion(
     table.add_row("Dry run", "yes" if dry_run else "no")
     table.add_row("Pending replay queue", "0")
     console.print(table)
+
+
+@notion_app.command("plan")
+def notion_plan(
+    latest: Annotated[
+        bool,
+        typer.Option("--latest", help="Inspect the latest planned Notion mutation."),
+    ] = False,
+    event_id: Annotated[
+        str | None,
+        typer.Option("--event-id", help="Inspect one planned mutation event id."),
+    ] = None,
+) -> None:
+    """Inspect a replayable Notion mutation plan without writing to Notion."""
+
+    if not latest and event_id is None:
+        raise typer.BadParameter("Use --latest or --event-id.")
+    service = _notion_replay_service(dry_run=True)
+    try:
+        inspection = (
+            service.inspect_event(event_id)
+            if event_id is not None
+            else service.inspect_latest_plan()
+        )
+    except NotionReplayError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    _print_notion_plan(inspection.event.event_id, inspection.mutation, inspection.replay_eligible)
+
+
+@notion_app.command("apply")
+def notion_apply(
+    latest: Annotated[
+        bool,
+        typer.Option("--latest", help="Apply the latest unapplied Notion mutation plan."),
+    ] = False,
+    event_id: Annotated[
+        str | None,
+        typer.Option("--event-id", help="Apply one planned mutation event id."),
+    ] = None,
+    dry_run: Annotated[
+        bool, typer.Option(help="Preview the apply without writing to Notion.")
+    ] = True,
+    confirm: Annotated[
+        bool,
+        typer.Option("--confirm", help="Required for live apply and review-required plans."),
+    ] = False,
+) -> None:
+    """Replay one planned Notion mutation with dry-run as the default."""
+
+    if not latest and event_id is None:
+        raise typer.BadParameter("Use --latest or --event-id.")
+    service = _notion_replay_service(dry_run=dry_run)
+    try:
+        result = (
+            service.apply_event(event_id, dry_run=dry_run, confirm=confirm)
+            if event_id is not None
+            else service.apply_latest(dry_run=dry_run, confirm=confirm)
+        )
+    except (NotionReplayError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    _print_notion_apply_result(result)
+
+
+@app.command("run-once")
+def run_once(
+    dry_run: Annotated[bool, typer.Option(help="Run the operator loop without writes.")] = True,
+    apply_reviewed: Annotated[
+        bool,
+        typer.Option(help="Reserved for explicitly reviewed mutation plans."),
+    ] = False,
+) -> None:
+    """Run one local operator-loop pass."""
+
+    if apply_reviewed and dry_run:
+        raise typer.BadParameter("--apply-reviewed requires --no-dry-run.")
+    if apply_reviewed:
+        raise typer.BadParameter("--apply-reviewed needs reviewed-plan metadata; use notion apply.")
+    result, event_log_path = _run_gmail_sync(dry_run=dry_run)
+    _print_gmail_sync_result(result, dry_run=dry_run, event_log_path=event_log_path)
 
 
 @app.command("evaluate")
@@ -456,6 +529,7 @@ def run_evals(
     table = Table(title="Career Forge Evals")
     table.add_column("Dataset")
     table.add_column("Prompt")
+    table.add_column("Model/Route")
     table.add_column("Cases")
     table.add_column("Passed")
     table.add_column("Failed")
@@ -471,11 +545,27 @@ def run_evals(
                 "passed": summary.passed,
                 "failed": summary.failed,
                 "pass_rate": summary.pass_rate,
+                "model_route": summary.model_route,
+            },
+        )
+        event_log.append(
+            event_type=EventType.EVAL_COMPLETED,
+            source="evals",
+            source_id=summary.dataset_name,
+            data={
+                "prompt_version": summary.prompt_version,
+                "cases": summary.cases,
+                "passed": summary.passed,
+                "failed": summary.failed,
+                "pass_rate": summary.pass_rate,
+                "model_route": summary.model_route,
+                "event_log_entries_appended": 2,
             },
         )
         table.add_row(
             summary.dataset_name,
             summary.prompt_version,
+            summary.model_route,
             str(summary.cases),
             str(summary.passed),
             str(summary.failed),
@@ -582,6 +672,121 @@ def record_override(
         data=data,
     )
     console.print(f"Recorded override for {source_id}.")
+
+
+def _run_gmail_sync(*, dry_run: bool) -> tuple[GmailSyncResult, str]:
+    settings = get_settings()
+    observability = _observability()
+    event_log = EventLog(settings.event_log_path)
+    service = GmailSyncService(
+        gmail_client=_gmail_client(dry_run=dry_run),
+        state_store=JsonStateStore(settings.state_path),
+        event_log=event_log,
+        notion_executor=_notion_executor(
+            dry_run=dry_run,
+            event_log=event_log,
+            observability=observability,
+        ),
+        observability=observability,
+    )
+    return service.sync(labels=["INBOX"]), str(settings.event_log_path)
+
+
+def _notion_executor(
+    *,
+    dry_run: bool,
+    event_log: EventLog,
+    observability: Observability,
+) -> NotionUpsertExecutor:
+    settings = get_settings()
+    return NotionUpsertExecutor(
+        gateway=None if dry_run else NotionHttpGateway(settings),
+        event_log=event_log,
+        dry_run=dry_run,
+        observability=observability,
+    )
+
+
+def _notion_replay_service(*, dry_run: bool) -> NotionReplayService:
+    settings = get_settings()
+    observability = _observability()
+    event_log = EventLog(settings.event_log_path)
+    return NotionReplayService(
+        event_log=event_log,
+        notion_executor=_notion_executor(
+            dry_run=dry_run,
+            event_log=event_log,
+            observability=observability,
+        ),
+    )
+
+
+def _print_setup_validation(report: SetupValidationReport) -> None:
+    table = Table(title="Setup Validation")
+    table.add_column("Status")
+    table.add_column("Check")
+    table.add_column("Detail")
+    table.add_column("Env Var")
+    table.add_column("Suggested Fix")
+    for item in report.items:
+        table.add_row(
+            item.status.value,
+            item.name,
+            item.detail,
+            item.env_var or "",
+            item.suggested_fix,
+        )
+    console.print(table)
+
+
+def _print_gmail_sync_result(
+    result: GmailSyncResult,
+    *,
+    dry_run: bool,
+    event_log_path: str,
+) -> None:
+    table = Table(title="Gmail Operator Loop")
+    table.add_column("Metric")
+    table.add_column("Value")
+    table.add_row("Messages inspected", str(result.fetched))
+    table.add_row("Classified", str(result.processed))
+    table.add_row("Skipped", str(result.skipped))
+    table.add_row("Failed", str(result.failed))
+    table.add_row("Notion mutation plans", str(result.mutations_planned))
+    table.add_row("Low confidence", str(result.low_confidence_classifications))
+    table.add_row("Mutations executed", str(result.mutations_executed))
+    table.add_row("Dry run", "yes" if dry_run else "no")
+    table.add_row("Event log", event_log_path)
+    table.add_row("Next command", "career-forge notion plan --latest")
+    console.print(table)
+
+
+def _print_notion_plan(event_id: str, mutation: NotionMutation, replay_eligible: bool) -> None:
+    table = Table(title="Latest Notion Mutation Plan")
+    table.add_column("Field")
+    table.add_column("Value")
+    table.add_row("Event ID", event_id)
+    table.add_row("Database", mutation.database)
+    table.add_row("Dedupe Key", mutation.dedupe_key)
+    table.add_row("Action", mutation.action)
+    table.add_row("Requires Review", "yes" if mutation.requires_review else "no")
+    table.add_row("Replay Eligible", "yes" if replay_eligible else "no")
+    table.add_row("Properties", json.dumps(mutation.properties, sort_keys=True))
+    console.print(table)
+
+
+def _print_notion_apply_result(result) -> None:
+    table = Table(title="Notion Apply")
+    table.add_column("Metric")
+    table.add_column("Value")
+    table.add_row("Plan event", result.event.event_id)
+    table.add_row("Database", result.mutation.database)
+    table.add_row("Dedupe Key", result.mutation.dedupe_key)
+    table.add_row("Executed", str(result.execution.executed))
+    table.add_row("Dry-run records", str(result.execution.dry_run))
+    table.add_row("Skipped", str(result.execution.skipped))
+    table.add_row("Failed", str(result.execution.failed))
+    console.print(table)
 
 
 def _print_queue(title: str, rows: list[tuple[str, str]]) -> None:

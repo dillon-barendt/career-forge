@@ -158,6 +158,23 @@ class Observability:
                 unit="1",
                 description="Cataloged agents, prompts, LLMs, and providers emitted to Logfire.",
             ),
+            "career_forge.gmail.messages": self._logfire.metric_counter(
+                "career_forge.gmail.messages",
+                unit="1",
+                description="Gmail messages fetched, classified, skipped, or failed.",
+            ),
+            "career_forge.notion.mutations": self._logfire.metric_counter(
+                "career_forge.notion.mutations",
+                unit="1",
+                description=(
+                    "Notion mutation planning, schema validation, apply, and failure events."
+                ),
+            ),
+            "career_forge.operator.replay": self._logfire.metric_counter(
+                "career_forge.operator.replay",
+                unit="1",
+                description="Operator replay commands for planned Notion mutations.",
+            ),
         }
 
     def _configure_variables(self) -> None:
