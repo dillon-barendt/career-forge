@@ -75,6 +75,20 @@ career-forge events --limit 20
 
 Reads recent append-only workflow events from `.career_forge/events.jsonl`.
 
+## Application Status Guardian
+
+```bash
+career-forge application-health examples/applications.json --report-date 2026-07-08
+career-forge stale
+career-forge review
+```
+
+Runs a deterministic daily health report over application records exported from
+Notion or a local JSON fixture. The report flags stale open applications,
+missing company/source data, and obvious status conflicts. Findings are written
+as `human_review.required` events; the worker does not update important
+application statuses directly.
+
 ## Feedback Loop
 
 ```bash

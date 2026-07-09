@@ -56,6 +56,7 @@ class EventType(StrEnum):
     HUMAN_REVIEW_REQUIRED = "human_review.required"
     HUMAN_OVERRIDE_RECORDED = "human_override.recorded"
     APPLICATION_OUTCOME_RECORDED = "application.outcome.recorded"
+    APPLICATION_STATUS_HEALTH_REPORTED = "application_status.health_reported"
     RECOMMENDATION_ISSUED = "recommendation.issued"
     PROMPT_EVAL_COMPLETED = "prompt_eval.completed"
     EVAL_COMPLETED = "eval.completed"
