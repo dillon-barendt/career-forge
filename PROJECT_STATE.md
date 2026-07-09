@@ -1,12 +1,12 @@
 # Project State
 
-Version: `0.4.0`
+Version: `0.5.0-unreleased`
 Last updated: 2026-07-08
-Status: Scaffold / vertical-slice development.
+Status: Phase 8 local operator loop implemented; live provider validation remains manual.
 
 ## Current Phase
 
-Scaffold / vertical-slice development.
+Phase 8: Replayable Operator Loop Hardening.
 
 ## Immediate Objective
 
@@ -46,23 +46,23 @@ flowchart LR
 - Phase 5: Career Forge rename and generic webhook intake foundation.
 - Phase 6: Logfire workspace integration for metrics, managed variables, Gateway routing, and eval runs.
 - Phase 7: Logfire catalog sync for agents, prompts, LLMs, and providers.
+- Phase 8: Replayable local operator loop with typed setup validation, dry-run
+  Gmail safety, append-only replay metadata, latest Notion plan/apply commands,
+  schema validation, expanded eval summaries, and `run-once --dry-run`.
 
 ## In-Progress Work
 
-- Typed setup validation and local dry-run operator flow.
+- Live validation of the Phase 8 loop against the user's Gmail, Notion, and
+  Logfire workspaces.
 - Gmail dry-run ingestion with OAuth configuration still manual.
-- Email classification schema and Pydantic AI service boundary.
-- Append-only event log for replay/debugging.
-- Notion mutation planner and upsert executor.
 - Live Gmail OAuth configuration on the target machine.
 - Live Notion upsert validation against real Notion database properties.
 - Logfire project/token setup for production traces.
+- Reviewed-plan metadata for future unattended apply.
 
 ## Not Yet Implemented
 
-- Dedicated `career-forge notion plan --latest` command for broader replay workflows.
-- Dedicated `career-forge notion apply --latest` command for broader replay workflows.
-- Automatic scheduled Gmail polling.
+- Hosted scheduled Gmail polling.
 - Hosted Logfire alert policies.
 - Gmail history-id incremental sync.
 - Calendar integration.
@@ -74,8 +74,10 @@ flowchart LR
 
 ## Outstanding Work
 
-- Scheduled runner for unattended Gmail polling.
-- Replay command for failed Notion mutations.
+- Wire cron or launchd to `career-forge run-once --dry-run` after local
+  credentials are validated.
+- Exercise `career-forge notion apply --latest --no-dry-run --confirm` against
+  one reviewed mutation in the live workspace.
 - Provider-specific API extraction for Greenhouse, Lever, Ashby, and Workday.
 - Calendar integration and interview scheduling support.
 
@@ -92,11 +94,13 @@ flowchart LR
 - No autonomous job applications.
 - Live Notion writes require `Dedupe Key` properties in target databases.
 - Live Pydantic AI calls require provider credentials.
+- `run-once --apply-reviewed` is intentionally blocked until reviewed-plan
+  metadata exists.
 
 ## Next Priorities
 
-1. Configure Gmail OAuth and run `career-forge ingest-gmail --dry-run`.
-2. Validate one live Notion upsert with `career-forge ingest-gmail-message`.
-3. Enable Logfire traces and sync the Logfire catalog.
-4. Add a scheduled daily runner.
-5. Expand eval datasets and publish richer summaries.
+1. Run `career-forge setup validate` and fix any errors.
+2. Configure Gmail OAuth and run `career-forge ingest-gmail --dry-run`.
+3. Inspect `career-forge notion plan --latest`.
+4. Validate one live Notion upsert with explicit confirmation.
+5. Wire a local daily `career-forge run-once --dry-run` launchd or cron job.

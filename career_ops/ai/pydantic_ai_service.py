@@ -80,11 +80,26 @@ class PydanticAIService:
                     )
                     return fallback
                 raise
-            output = result.output
-            if not isinstance(output, PydanticAIEmailEvaluation):
-                output = PydanticAIEmailEvaluation.model_validate(output)
+            try:
+                output = result.output
+                if not isinstance(output, PydanticAIEmailEvaluation):
+                    output = PydanticAIEmailEvaluation.model_validate(output)
+            except Exception:
+                if self.allow_local_fallback:
+                    fallback = self._fallback_email_classification(message)
+                    self._record_ai_result(
+                        "email_classifier",
+                        fallback.confidence_score,
+                        fallback=True,
+                    )
+                    return fallback
+                raise
             evaluation = output.model_copy(
-                update={"prompt_version": EMAIL_CLASSIFIER_PROMPT_VERSION}
+                update={
+                    "prompt_version": EMAIL_CLASSIFIER_PROMPT_VERSION,
+                    "model_name": self._agent_model_name(),
+                    "fallback_status": "none",
+                }
             )
             self._record_ai_result("email_classifier", evaluation.confidence_score)
             return evaluation
@@ -270,6 +285,8 @@ class PydanticAIService:
             human_review_required=confidence < 0.65,
             reasons=[reason],
             prompt_version=EMAIL_CLASSIFIER_PROMPT_VERSION,
+            model_name=self._agent_model_name(),
+            fallback_status="local_fallback",
         )
 
     def _fallback_opportunity_evaluation(self, posting: JobPosting) -> OpportunityEvaluation:

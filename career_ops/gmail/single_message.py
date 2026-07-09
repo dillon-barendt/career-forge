@@ -7,6 +7,7 @@ from career_ops.automation.gmail_ingestion import GmailIngestionPipeline
 from career_ops.events.log import EventLog
 from career_ops.gmail.client import GmailClient
 from career_ops.models import (
+    EventStatus,
     EventType,
     GmailIngestionPlan,
     NotionExecutionResult,
@@ -60,6 +61,9 @@ class SingleMessageWriteControl:
             plan = self.ingestion_pipeline.plan(message)
             self._append_plan_events(plan)
             mutations = self.mutation_planner.from_gmail_plan(plan)
+            if not self.notion_executor.dry_run and plan.classification.requires_human_review:
+                msg = "Low-confidence single-message plans require human review before live apply."
+                raise ValueError(msg)
             selected = self._selected_mutations(
                 message_id=message_id,
                 mutations=mutations,
@@ -102,29 +106,56 @@ class SingleMessageWriteControl:
     def _append_plan_events(self, plan: GmailIngestionPlan) -> None:
         source_id = plan.dedupe_key.removeprefix("gmail:")
         self.event_log.append(
+            event_type=EventType.GMAIL_MESSAGE_SELECTED,
+            source="gmail",
+            source_id=source_id,
+            data={"single_message_control": True},
+            correlation_id=source_id,
+        )
+        self.event_log.append(
             event_type=EventType.GMAIL_MESSAGE_RECEIVED,
             source="gmail",
             source_id=source_id,
             data={"single_message_control": True},
+            correlation_id=source_id,
+        )
+        classification_data = {
+            "category": plan.classification.category.value,
+            "confidence": plan.classification.confidence,
+            "requires_human_review": plan.classification.requires_human_review,
+            "prompt_version": plan.classification.prompt_version,
+            "single_message_control": True,
+        }
+        self.event_log.append(
+            event_type=EventType.GMAIL_MESSAGE_CLASSIFIED,
+            source="gmail",
+            source_id=source_id,
+            data=classification_data,
+            correlation_id=source_id,
+            replay_eligible=True,
         )
         self.event_log.append(
             event_type=EventType.EMAIL_CLASSIFIED,
             source="gmail",
             source_id=source_id,
-            data={
-                "category": plan.classification.category.value,
-                "confidence": plan.classification.confidence,
-                "requires_human_review": plan.classification.requires_human_review,
-                "prompt_version": plan.classification.prompt_version,
-                "single_message_control": True,
-            },
+            data=classification_data,
+            correlation_id=source_id,
+            replay_eligible=True,
         )
         if plan.classification.requires_human_review:
+            self.event_log.append(
+                event_type=EventType.OPERATOR_REVIEW_REQUIRED,
+                source="gmail",
+                source_id=source_id,
+                data={"category": plan.classification.category.value},
+                status=EventStatus.REVIEW_REQUIRED,
+            )
             self.event_log.append(
                 event_type=EventType.HUMAN_REVIEW_REQUIRED,
                 source="gmail",
                 source_id=source_id,
                 data={"category": plan.classification.category.value},
+                status=EventStatus.REVIEW_REQUIRED,
             )
         if plan.interview is not None:
             self.event_log.append(

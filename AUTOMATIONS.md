@@ -10,8 +10,10 @@ flowchart TD
     C -- "Yes" --> E["Extract company/contact/opportunity"]
     E --> F["Create interview/follow-up intents"]
     F --> G["Build NotionMutation list"]
-    G --> H{"Confidence high?"}
-    H -- "Yes" --> I["Upsert to Notion when writer is enabled"]
+    G --> K["Append notion.mutation.planned"]
+    K --> L["Inspect latest plan"]
+    L --> H{"Confidence high?"}
+    H -- "Yes" --> I["Dry-run replay or confirmed apply"]
     H -- "No" --> J["Manual Review queue"]
 ```
 
@@ -24,15 +26,37 @@ Implemented:
 - audit events
 - dedupe key generation
 - Notion mutation intent planning
+- latest mutation plan inspection and replay
 - dry-run/live Notion execution in `providers/notion/executor.py`
+- Notion `Dedupe Key` schema validation before live apply
 - append-only workflow events in `events/log.py`
+- local `career-forge run-once --dry-run` runner
 
 Manual wiring still required:
 
 - Gmail API OAuth credentials at `.career_forge/gmail_credentials.json`
-- polling/scheduled execution
+- cron or launchd wiring for scheduled local execution
 - Notion database `Dedupe Key` properties for live upserts
 - Gmail filters/labels if they should be managed outside code
+
+Primary Phase 8 command sequence:
+
+```bash
+career-forge setup validate
+career-forge ingest-gmail --dry-run
+career-forge notion plan --latest
+career-forge notion apply --latest --dry-run
+career-forge run-once --dry-run
+```
+
+Live apply remains explicit:
+
+```bash
+career-forge notion apply --latest --no-dry-run --confirm
+```
+
+Broad Gmail dry-runs do not acknowledge messages, advance checkpoints, or mark
+local state as processed.
 
 ## Job URL Ingestion
 
@@ -128,3 +152,7 @@ the package is installed. Spans are created for Gmail polling, Gmail message
 processing, AI classification/evaluation, and Notion mutation execution.
 Pydantic AI content capture is disabled by default to avoid sending raw email or
 job posting text as trace content.
+
+Phase 8 also registers counters for Gmail message outcomes, Notion mutation
+outcomes, and operator replay commands. The metrics avoid raw subject lines,
+message bodies, email addresses, and other high-cardinality payload content.

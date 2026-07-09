@@ -15,6 +15,8 @@ flowchart LR
     GmailAgent --> AI["Pydantic AI Service"]
     OpportunityAgent --> AI
     AI --> Planner["Notion Mutation Planner"]
+    Events --> Replay["Operator Replay Service"]
+    Replay --> Executor
     Planner --> Executor["Notion Upsert Executor"]
     Executor --> Notion["Notion Databases"]
     Executor --> Events["Append-only Event Log"]
@@ -41,6 +43,7 @@ flowchart LR
 | `providers/notion/` | Notion mutation planning, execution, and HTTP gateway |
 | `gmail/` | Gmail OAuth client and checkpointed sync service |
 | `events/` | Append-only JSONL workflow event log |
+| `operator_loop.py` | Replay-oriented inspection and apply service for planned Notion mutations |
 | `state/` | Local checkpoint and processed-source state |
 | `ai/` | Pydantic AI service and prompt-versioned structured outputs |
 | `analytics/` | Pure analytics functions |
@@ -98,3 +101,18 @@ writing. Each mutation includes:
 The Phase 3 executor supports dry-run mode, retry events, duplicate prevention,
 and a live HTTP gateway that upserts by `Dedupe Key` when Notion credentials are
 configured.
+
+Phase 8 adds a replayable operator layer:
+
+- `career-forge notion plan --latest` reads the latest
+  `notion.mutation.planned` event and prints the serialized mutation.
+- `career-forge notion apply --latest --dry-run` replays the latest unapplied
+  plan without writing to Notion.
+- `career-forge notion apply --latest --no-dry-run --confirm` is the explicit
+  live apply path.
+- low-confidence mutation plans carry review metadata and are refused by replay
+  unless explicitly confirmed after review.
+- live apply validates that the target database has a `Dedupe Key` rich-text
+  property before upserting.
+
+Old event records remain readable because new replay fields have defaults.

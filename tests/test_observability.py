@@ -114,6 +114,9 @@ def test_observability_configures_target_logfire_project(monkeypatch) -> None:
     assert fake_logfire.httpx_instrumented is True
     assert "career_forge.ai.requests" in fake_logfire.metrics
     assert "career_forge.catalog.items" in fake_logfire.metrics
+    assert "career_forge.gmail.messages" in fake_logfire.metrics
+    assert "career_forge.notion.mutations" in fake_logfire.metrics
+    assert "career_forge.operator.replay" in fake_logfire.metrics
     assert "career_forge.ai.gateway_enabled" in fake_logfire.variables
 
 

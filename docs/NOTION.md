@@ -44,6 +44,12 @@ must come from Notion's developer UI.
 
 - Dry-run mode is the default for CLI sync commands.
 - Mutations are planned before execution.
+- Planned mutations are serialized into `notion.mutation.planned` events for
+  inspection and replay.
+- Inspect the latest plan with `career-forge notion plan --latest`.
+- Replay safely with `career-forge notion apply --latest --dry-run`.
+- Live replay requires `career-forge notion apply --latest --no-dry-run --confirm`.
 - Executed mutations are recorded in the event log.
 - Duplicate dedupe keys are skipped.
-- Failures produce retry/error events.
+- Failures produce retry/error events and `notion.mutation.failed` events that
+  remain replay-eligible.

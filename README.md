@@ -13,12 +13,12 @@ Career Forge is currently in scaffold / vertical-slice development.
 
 | Area | Status | Notes |
 |---|---:|---|
-| CLI skeleton | In progress | Core command surface exists for setup checks, dry-runs, ingestion, events, feedback, and local materials |
+| CLI skeleton | In progress | Core command surface exists for setup validation, dry-runs, ingestion, replay, evals, events, feedback, and local materials |
 | Settings | In progress | Typed local configuration using `.env` and `pydantic-settings` |
-| Event log | In progress | Append-only JSONL runtime state under `.career_forge/` |
+| Event log | In progress | Append-only JSONL runtime state under `.career_forge/` with replay metadata for operator workflows |
 | Gmail ingestion | In progress | OAuth client and dry-run sync exist; real OAuth setup remains manual |
 | Email classification | In progress | Pydantic AI structured output with deterministic fallback for dry-runs/tests |
-| Notion integration | In progress | Mutation planning and upsert executor exist; first live write still needs real token/database validation |
+| Notion integration | In progress | Mutation planning, latest-plan inspection, dry-run replay, schema validation, and explicit confirmed apply exist |
 | Logfire tracing | In progress | Wrapper and feedback-loop events exist; hosted alerts still need manual setup |
 | Webhook API | In progress | Generic FastAPI route exists for `career-forge/notion`; durable receipt storage and hosted routing remain follow-up work |
 | ATS providers | Scaffolded | Provider abstraction and generic extraction exist; provider-specific extraction remains shallow |
@@ -31,6 +31,7 @@ Career Forge is currently in scaffold / vertical-slice development.
 - classifies messages into job-search categories
 - evaluates opportunities with structured Pydantic AI outputs
 - plans Notion mutations before live writes
+- inspects and replays the latest safe Notion mutation plan
 - logs workflow events for replay and debugging
 - traces AI and sync work with Logfire when configured
 - ingests job URLs through a provider abstraction
@@ -50,6 +51,8 @@ flowchart LR
     ATS --> OppAI["Pydantic AI Opportunity Evaluator"]
     EmailAI --> Planner["Notion Mutation Planner"]
     OppAI --> Planner
+    Events --> Replay["Operator Replay CLI"]
+    Replay --> Executor
     Planner --> Executor["Notion Upsert Executor"]
     Executor --> Notion["Notion Source of Truth"]
     GmailSync --> Events["Append-only Event Log"]
@@ -122,7 +125,7 @@ To populate local secrets without echoing them in your shell history:
 
 ```bash
 scripts/configure_local_secrets.sh
-uv run career-forge check-setup
+uv run career-forge setup validate
 ```
 
 ## Fast Path: Local Dry Run
@@ -133,8 +136,10 @@ This is the intended first successful local workflow:
 uv sync --extra dev
 cp .env.example .env
 scripts/configure_local_secrets.sh
-uv run career-forge check-setup
+uv run career-forge setup validate
 uv run career-forge ingest-gmail --dry-run
+uv run career-forge notion plan --latest
+uv run career-forge notion apply --latest --dry-run
 uv run career-forge events --limit 20
 ```
 
@@ -151,20 +156,24 @@ Current working commands:
 ```bash
 uv run career-forge ingest-gmail-message <gmail-message-id> --dry-run
 uv run career-forge events --limit 20
+uv run career-forge notion plan --latest
+uv run career-forge notion apply --latest --dry-run
 uv run career-forge ingest-gmail-message <gmail-message-id> \
   --no-dry-run \
   --mutation-index 0 \
   --confirm-message-id <gmail-message-id>
+uv run career-forge notion apply --latest --no-dry-run --confirm
 ```
 
 `ingest-gmail-message` does not advance the broad Gmail checkpoint and does not
 acknowledge the message as processed. Live mode applies exactly one indexed
 mutation and requires the message id to be repeated through
-`--confirm-message-id`. Dedicated `career-forge notion plan --latest` and
-`career-forge notion apply --latest` commands are still planned for broader replay
-workflows.
+`--confirm-message-id`. The broader replay path is `career-forge notion
+plan --latest` followed by `career-forge notion apply --latest --dry-run`.
+Live replay requires `--no-dry-run --confirm` and refuses low-confidence plans
+unless explicitly reviewed.
 
-## Tonight Vertical Slice
+## Phase 8 Operator Loop
 
 The first production-shaped loop is:
 
@@ -179,7 +188,42 @@ Gmail inbox
   -> trace everything in Logfire
 ```
 
-Everything else should hang off this loop.
+Phase 8 hardens this into a local operator loop:
+
+```bash
+career-forge setup validate
+career-forge ingest-gmail --dry-run
+career-forge ingest-gmail-message <gmail-message-id> --dry-run
+career-forge notion plan --latest
+career-forge notion apply --latest --dry-run
+career-forge evals
+career-forge logfire-sync
+career-forge run-once --dry-run
+```
+
+Safety model:
+
+- dry-run is the default for Gmail ingestion, single-message inspection, Notion
+  replay, and `run-once`
+- broad Gmail dry-runs do not acknowledge messages, update checkpoints, or mark
+  local state as processed
+- live Notion replay requires `--confirm`
+- low-confidence mutation plans carry review metadata and are refused by replay
+  unless explicitly reviewed
+- Notion live apply validates the target database has a `Dedupe Key` rich-text
+  property before writing
+- events are append-only; failed mutations are replay-eligible instead of being
+  mutated in place
+
+Local scheduled runner:
+
+```bash
+career-forge run-once --dry-run
+```
+
+Run it daily with cron or launchd once Gmail OAuth, Notion database IDs, and
+Logfire configuration have been validated. `--apply-reviewed` is reserved until
+reviewed-plan metadata is wired end to end.
 
 ## Daily Workflow
 
@@ -273,10 +317,10 @@ demo data.
 
 Near-term:
 
-- validate the first live Notion upsert
-- improve dry-run mutation review
-- expand Logfire trace coverage and alert policies
-- wrap JSON eval fixtures with a runnable eval harness
+- validate the first live Notion upsert against real database schemas
+- run the Phase 8 loop against one real Gmail message
+- expand hosted Logfire alert policies
+- add reviewed-plan metadata for unattended apply
 - harden provider-specific ATS extraction
 
 Future:

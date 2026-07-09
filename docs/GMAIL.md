@@ -12,6 +12,7 @@ Career Forge syncs the dedicated career inbox:
 4. Run:
 
 ```bash
+career-forge setup validate
 career-forge ingest-gmail --dry-run
 ```
 
@@ -34,6 +35,8 @@ Before broad live Gmail-to-Notion sync, use one known Gmail message id:
 ```bash
 career-forge ingest-gmail-message <gmail-message-id> --dry-run
 career-forge events --limit 20
+career-forge notion plan --latest
+career-forge notion apply --latest --dry-run
 career-forge ingest-gmail-message <gmail-message-id> \
   --no-dry-run \
   --mutation-index 0 \
@@ -50,9 +53,11 @@ the Gmail message or advance the broad sync checkpoint.
 - classifies messages with Pydantic AI
 - plans Notion mutations
 - records append-only events
-- marks processed messages with `Career Forge/Processed`
-- checkpoints the last processed message id
+- live mode marks processed messages with `Career Forge/Processed`
+- live mode checkpoints the last processed message id
 
 ## Safety
 
-Already-processed messages are skipped. Dry-run mode does not mutate Notion.
+Already-processed messages are skipped in live/checkpointed runs. Dry-run mode
+does not mutate Notion, acknowledge Gmail messages, or update broad sync
+checkpoint state.

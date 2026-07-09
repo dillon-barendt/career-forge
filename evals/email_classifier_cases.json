@@ -27,6 +27,30 @@
       }
     },
     {
+      "name": "recruiter_intro",
+      "inputs": {
+        "subject": "Senior Backend Engineer role",
+        "body": "I am a recruiter with an opportunity that may fit your background.",
+        "sender": "Alex Talent <alex@example.com>"
+      },
+      "expected_output": {
+        "classification": "Recruiter Outreach",
+        "human_review_required": false
+      }
+    },
+    {
+      "name": "rejection",
+      "inputs": {
+        "subject": "Application update",
+        "body": "Unfortunately we are not moving forward with your application.",
+        "sender": "Hiring Team <jobs@example.com>"
+      },
+      "expected_output": {
+        "classification": "Rejection",
+        "human_review_required": false
+      }
+    },
+    {
       "name": "ambiguous_company_update",
       "inputs": {
         "subject": "Quick update",
@@ -36,6 +60,18 @@
       "expected_output": {
         "classification": "Company Communication",
         "human_review_required": true
+      }
+    },
+    {
+      "name": "partial_recruiter_message",
+      "inputs": {
+        "subject": "Opportunity",
+        "body": "This role might be interesting, but details are limited.",
+        "sender": "Talent <talent@example.com>"
+      },
+      "expected_output": {
+        "classification": "Recruiter Outreach",
+        "human_review_required": false
       }
     }
   ]
