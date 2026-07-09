@@ -99,6 +99,7 @@ storage should move to SQLite/Postgres before production multi-worker use.
 - `ai.evaluation.completed`
 - `operator.review_required`
 - `human_review.required`
+- `application_status.health_reported`
 - `eval.completed`
 - `error.retry`
 - `webhook.received`

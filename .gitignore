@@ -6,9 +6,11 @@
 .career_ops/
 .logfire/
 .venv/
+.idea/
 dist/
 build/
 *.egg-info/
+*.zip
 __pycache__/
 *.py[cod]
 .pytest_cache/
