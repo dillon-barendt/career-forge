@@ -32,8 +32,9 @@ def test_feedback_cli_records_outcomes_and_overrides(tmp_path, monkeypatch) -> N
     runner = CliRunner()
 
     assert (
-        runner.invoke(app, ["record-outcome", "app_1", "interview", "--source", "Recruiter"])
-        .exit_code
+        runner.invoke(
+            app, ["record-outcome", "app_1", "interview", "--source", "Recruiter"]
+        ).exit_code
         == 0
     )
     assert (

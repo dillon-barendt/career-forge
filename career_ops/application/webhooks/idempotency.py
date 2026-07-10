@@ -34,9 +34,7 @@ def build_dedupe_key(
         return f"{project_name}:{source_name}:event:{event_id}"
 
     stable_headers = {
-        key: headers[key]
-        for key in STABLE_DEDUPE_HEADERS
-        if key in headers and headers[key]
+        key: headers[key] for key in STABLE_DEDUPE_HEADERS if key in headers and headers[key]
     }
     material = {
         "project_name": project_name,
@@ -49,11 +47,9 @@ def build_dedupe_key(
 
 
 class WebhookReceiptStore(Protocol):
-    async def exists(self, dedupe_key: str) -> bool:
-        ...
+    async def exists(self, dedupe_key: str) -> bool: ...
 
-    async def record(self, dedupe_key: str) -> None:
-        ...
+    async def record(self, dedupe_key: str) -> None: ...
 
 
 class InMemoryWebhookReceiptStore:
