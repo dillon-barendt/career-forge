@@ -128,6 +128,10 @@ scripts/configure_local_secrets.sh
 uv run career-forge setup validate
 ```
 
+The script writes the Gmail OAuth client file, the Gmail token path, the OpenAI
+key, the Notion token, and the core Notion database IDs into ignored local
+files and `.env`.
+
 ## Fast Path: Local Dry Run
 
 This is the intended first successful local workflow:

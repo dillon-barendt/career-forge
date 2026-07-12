@@ -34,12 +34,23 @@ prompt_secret() {
   printf '%s' "$value"
 }
 
+prompt_value() {
+  local label="$1"
+  local value
+  read -r -p "$label: " value
+  printf '%s' "$value"
+}
+
 echo "This writes secrets only to ignored local files: .env and .career_forge/gmail_credentials.json"
 
 google_client_id="$(prompt_secret 'Google OAuth Client ID')"
 google_client_secret="$(prompt_secret 'Google OAuth Client Secret')"
 openai_api_key="$(prompt_secret 'OpenAI API key')"
 notion_token="$(prompt_secret 'Notion integration token (press Enter to skip)')"
+opportunities_database_id="$(prompt_value 'Notion Opportunities database ID (press Enter to skip)')"
+companies_database_id="$(prompt_value 'Notion Companies database ID (press Enter to skip)')"
+contacts_database_id="$(prompt_value 'Notion Contacts database ID (press Enter to skip)')"
+applications_database_id="$(prompt_value 'Notion Applications database ID (press Enter to skip)')"
 
 printf '%s\0%s' "$google_client_id" "$google_client_secret" | python -c '
 from pathlib import Path
@@ -69,6 +80,18 @@ upsert_env "OPENAI_API_KEY" "$openai_api_key"
 
 if [[ -n "$notion_token" ]]; then
   upsert_env "CAREER_FORGE_NOTION_TOKEN" "$notion_token"
+fi
+if [[ -n "$opportunities_database_id" ]]; then
+  upsert_env "CAREER_FORGE_OPPORTUNITIES_DATABASE_ID" "$opportunities_database_id"
+fi
+if [[ -n "$companies_database_id" ]]; then
+  upsert_env "CAREER_FORGE_COMPANIES_DATABASE_ID" "$companies_database_id"
+fi
+if [[ -n "$contacts_database_id" ]]; then
+  upsert_env "CAREER_FORGE_CONTACTS_DATABASE_ID" "$contacts_database_id"
+fi
+if [[ -n "$applications_database_id" ]]; then
+  upsert_env "CAREER_FORGE_APPLICATIONS_DATABASE_ID" "$applications_database_id"
 fi
 
 echo "Local secrets written. Run: uv run career-forge check-setup"
