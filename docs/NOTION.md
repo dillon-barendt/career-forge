@@ -36,6 +36,15 @@ Create the integration in Notion's developer UI:
 CAREER_FORGE_NOTION_TOKEN=secret_xxx
 ```
 
+For a first local run, also set the core database IDs in the same `.env`:
+
+```bash
+CAREER_FORGE_OPPORTUNITIES_DATABASE_ID=notion_database_id
+CAREER_FORGE_COMPANIES_DATABASE_ID=notion_database_id
+CAREER_FORGE_CONTACTS_DATABASE_ID=notion_database_id
+CAREER_FORGE_APPLICATIONS_DATABASE_ID=notion_database_id
+```
+
 The Notion connector used by Codex can read/write workspace pages, but it cannot
 create a Notion API integration secret for the local application. That secret
 must come from Notion's developer UI.
