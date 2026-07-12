@@ -49,6 +49,11 @@ It passes `service_name="career-forge"` and
 Pydantic AI content capture is disabled by default to avoid sending email or job
 posting text as trace content.
 
+Each run should keep a stable external `source_id` for the originating record
+and a stable `prompt_version` for the model prompt that produced the result.
+The event stream already carries retry/error boundaries through the domain
+events used by Gmail, Notion, and opportunity scoring.
+
 ## Metrics And Variables
 
 Career Forge registers these Logfire metrics when
@@ -134,6 +139,10 @@ Use those observations to alert on low-confidence spikes, prompt regressions,
 source conversion problems, Gmail/Notion failures, and scoring drift. See
 [Feedback Loop](FEEDBACK_LOOP.md) for alert thresholds and the improvement
 policy.
+
+The feedback loop is also where false positives, hallucinated facts, and
+missing next actions are scored against the local event log so prompt and model
+changes stay tied to reviewable signals.
 
 ## Prompt Evals
 
