@@ -8,6 +8,8 @@ Providers isolate external systems from business logic.
 | --- | --- | --- |
 | Gmail | `career_ops.gmail` | In progress: OAuth client and dry-run sync service |
 | Notion | `career_ops.providers.notion` | In progress: mutation planner, executor, HTTP gateway |
+| GitHub | webhook source | In progress: accepted through webhook intake for future Linear automation |
+| Linear | planned provider | Planned: execution task sync from GitHub and Career Forge events |
 | Greenhouse | `career_ops.providers.jobs` | Scaffolded: provider matching and generic HTML extraction |
 | Lever | `career_ops.providers.jobs` | Scaffolded: provider matching and generic HTML extraction |
 | Ashby | `career_ops.providers.jobs` | Scaffolded: provider matching and generic HTML extraction |
@@ -36,3 +38,13 @@ Provider output is `JobPosting`. Providers must not write to Notion directly.
 
 Do not treat a provider as production-supported until it has fixture coverage,
 realistic extraction behavior, and live dry-run evidence.
+
+## Workspace Ownership
+
+Use the smallest tool that owns the work:
+
+- GitHub owns repository events, pull requests, checks, and review details.
+- Linear owns execution state and should become the automated task system for
+  GitHub-driven work.
+- Notion owns durable career knowledge and should not mirror noisy execution
+  details that are better handled in Linear or GitHub.

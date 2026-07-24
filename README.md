@@ -2,10 +2,12 @@
 
 Career Forge is a local automation platform for running a serious software
 engineering job search. It connects a dedicated Gmail inbox, Pydantic AI,
-Logfire, ATS job postings, and Notion into one observable workflow.
+Logfire, ATS job postings, GitHub webhooks, Linear execution, and Notion into
+one observable workflow.
 
-Notion is the source of truth. The CLI and agents reduce manual work around
-triage, fit evaluation, follow-ups, interview prep, and weekly review.
+Notion is the source of truth for durable career knowledge. Linear owns
+execution tasks. GitHub webhooks are the automation trigger surface for
+engineering work that should become Linear action.
 
 ## Current Implementation Status
 
@@ -20,7 +22,8 @@ Career Forge is currently in scaffold / vertical-slice development.
 | Email classification | In progress | Pydantic AI structured output with deterministic fallback for dry-runs/tests |
 | Notion integration | In progress | Mutation planning, latest-plan inspection, dry-run replay, schema validation, and explicit confirmed apply exist |
 | Logfire tracing | In progress | Wrapper and feedback-loop events exist; hosted alerts still need manual setup |
-| Webhook API | In progress | Generic FastAPI route exists for `career-forge/notion`; durable receipt storage and hosted routing remain follow-up work |
+| Webhook API | In progress | Generic FastAPI route exists for `career-forge/notion` and `career-forge/github`; durable receipt storage and hosted routing remain follow-up work |
+| Linear automation | Planned | Linear should own execution state; GitHub webhook intake is now a first step toward issue and PR automation |
 | ATS providers | Scaffolded | Provider abstraction and generic extraction exist; provider-specific extraction remains shallow |
 | Calendar integration | Planned | Interview scheduling and reminders are not implemented |
 | Agents | Scaffolded | Agent modules exist as boundaries; deeper recruiter/resume/interview workflows are planned |
@@ -35,6 +38,7 @@ Career Forge is currently in scaffold / vertical-slice development.
 - logs workflow events for replay and debugging
 - traces AI and sync work with Logfire when configured
 - ingests job URLs through a provider abstraction
+- accepts GitHub webhooks for observed automation triggers
 - provides a daily CLI interface for action queues
 
 ## Architecture
@@ -45,9 +49,11 @@ flowchart LR
     GmailSync --> EmailAI["Pydantic AI Email Classifier"]
     JobURL["Job URL"] --> ATS["ATS Provider Extractor"]
     Hook["hooks.concordmanage.com/career-forge/notion"] --> WebhookAPI["FastAPI Webhook API"]
+    GitHub["GitHub Webhooks"] --> WebhookAPI
     WebhookAPI --> WebhookService["Webhook Ingestion Service"]
     WebhookService --> Events
     WebhookService --> Logfire
+    WebhookService --> Linear["Linear Execution Tasks"]
     ATS --> OppAI["Pydantic AI Opportunity Evaluator"]
     EmailAI --> Planner["Notion Mutation Planner"]
     OppAI --> Planner
@@ -63,7 +69,8 @@ flowchart LR
 ```
 
 Core principle: business logic stays independent from providers. Gmail, Notion,
-Logfire, and ATS integrations are adapters around typed domain models.
+Linear, GitHub, Logfire, and ATS integrations are adapters around typed domain
+models.
 
 ## Installation
 
@@ -111,6 +118,8 @@ CAREER_FORGE_WEBHOOKS_PUBLIC_BASE_URL=https://hooks.concordmanage.com
 CAREER_FORGE_WEBHOOKS_DEFAULT_PROJECT=career-forge
 CAREER_FORGE_WEBHOOKS_NOTION_ENABLED=true
 CAREER_FORGE_WEBHOOKS_NOTION_SECRET=
+CAREER_FORGE_WEBHOOKS_GITHUB_ENABLED=true
+CAREER_FORGE_WEBHOOKS_GITHUB_SECRET=
 CAREER_FORGE_WEBHOOKS_MAX_BODY_BYTES=1048576
 CAREER_FORGE_WEBHOOKS_LOG_PAYLOADS=false
 ```

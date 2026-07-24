@@ -39,6 +39,12 @@ from career_ops.models import (
 from career_ops.notion.schemas import JobOpportunity
 from career_ops.observability import Observability
 from career_ops.operator_loop import NotionReplayError, NotionReplayService
+from career_ops.opportunities.lifecycle import (
+    ALLOWED_TRANSITIONS,
+    OpportunityLifecycleState,
+    derive_next_action,
+    export_opportunity_lifecycle_mermaid,
+)
 from career_ops.providers.notion.executor import NotionUpsertExecutor
 from career_ops.providers.notion.gateway import NotionHttpGateway
 from career_ops.scoring.fit_score import score_opportunity
@@ -156,6 +162,29 @@ def score(
     opportunity = _opportunity_from_args(title, company, description)
     result = score_opportunity(opportunity)
     console.print_json(json.dumps(result.model_dump()))
+
+
+@app.command("opportunity-lifecycle")
+def opportunity_lifecycle(
+    mermaid: Annotated[
+        bool,
+        typer.Option("--mermaid", help="Print the pydantic-graph Mermaid state diagram."),
+    ] = False,
+) -> None:
+    """Show the reusable opportunity schema lifecycle."""
+
+    if mermaid:
+        console.print(export_opportunity_lifecycle_mermaid(), markup=False)
+        return
+
+    table = Table(title="Opportunity Lifecycle")
+    table.add_column("State")
+    table.add_column("Next Action")
+    table.add_column("Allowed Transitions")
+    for state in OpportunityLifecycleState:
+        allowed = ", ".join(next_state.value for next_state in ALLOWED_TRANSITIONS[state]) or "none"
+        table.add_row(state.value, derive_next_action(state), allowed)
+    console.print(table)
 
 
 @app.command("ingest-url")

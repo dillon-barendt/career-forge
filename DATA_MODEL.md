@@ -27,6 +27,7 @@ written or displayed.
 | `ClassifiedGmailMessage` | Operator-facing Gmail classification contract with prompt/model/fallback metadata |
 | `GmailIngestionPlan` | Extracted Notion entities plus audit metadata |
 | `JobPosting` | Provider-normalized job posting |
+| `OpportunityRecord` | Reusable opportunity schema with lifecycle state and derived next action |
 | `OpportunityEvaluation` | Fit score, confidence, reasoning, and suggestions |
 | `JobIngestionResult` | Posting, evaluation, opportunity, priority, review flag |
 | `WeeklyAnalyticsInput` | Weekly applications and recruiter contacts |
@@ -67,6 +68,38 @@ explicit replay categories:
 - `newsletter`
 - `irrelevant`
 - `unknown`
+
+## Opportunity Lifecycle
+
+Opportunity records use short state names that fit Notion select fields and
+Linear labels:
+
+- `sourced`
+- `normalized`
+- `company_researched`
+- `fit_scored`
+- `materials_ready`
+- `applied`
+- `follow_up_due`
+- `closed_rejected`
+- `closed_low_fit`
+- `closed_duplicate`
+
+Valid transitions are intentionally narrow:
+
+- `sourced` -> `normalized`, `closed_duplicate`
+- `normalized` -> `company_researched`, `closed_duplicate`
+- `company_researched` -> `fit_scored`, `closed_low_fit`
+- `fit_scored` -> `materials_ready`, `closed_low_fit`
+- `materials_ready` -> `applied`
+- `applied` -> `follow_up_due`, `closed_rejected`
+- `follow_up_due` -> `applied`, `closed_rejected`
+
+Duplicate and low-fit records close before entering the active pipeline. The
+active pipeline is `materials_ready`, `applied`, and `follow_up_due`.
+
+`career_ops.opportunities.lifecycle.export_opportunity_lifecycle_mermaid()`
+exports the pydantic-graph state diagram for docs, prompts, or Linear comments.
 
 ## Dedupe Keys
 

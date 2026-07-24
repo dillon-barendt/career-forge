@@ -71,10 +71,28 @@ def test_post_career_forge_notion_accepts_json_payload() -> None:
     assert body["processing_status"] == "accepted"
 
 
+def test_post_career_forge_github_accepts_json_payload() -> None:
+    client = TestClient(create_app(Settings()))
+
+    response = client.post(
+        "/hooks/career-forge/github",
+        json={"action": "opened", "issue": {"number": 123}},
+        headers={"X-GitHub-Event": "issues", "X-GitHub-Delivery": "delivery_123"},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["accepted"] is True
+    assert body["project_name"] == "career-forge"
+    assert body["source_name"] == "github"
+    assert body["dedupe_key"].startswith("career-forge:github:")
+    assert body["processing_status"] == "accepted"
+
+
 def test_unsupported_project_source_is_rejected() -> None:
     client = TestClient(create_app(Settings()))
 
-    response = client.post("/hooks/career-forge/github", json={"id": "evt_123"})
+    response = client.post("/hooks/career-forge/linear", json={"id": "evt_123"})
 
     assert response.status_code == 404
     assert "Unsupported webhook source" in response.json()["detail"]
