@@ -183,6 +183,14 @@ class Settings(BaseSettings):
         default=None,
         validation_alias=env_alias("WEBHOOKS_NOTION_SECRET"),
     )
+    webhooks_github_enabled: bool = Field(
+        default=True,
+        validation_alias=env_alias("WEBHOOKS_GITHUB_ENABLED"),
+    )
+    webhooks_github_secret: SecretStr | None = Field(
+        default=None,
+        validation_alias=env_alias("WEBHOOKS_GITHUB_SECRET"),
+    )
     webhooks_max_body_bytes: int = Field(
         default=1_048_576,
         validation_alias=env_alias("WEBHOOKS_MAX_BODY_BYTES"),

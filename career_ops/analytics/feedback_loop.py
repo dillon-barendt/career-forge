@@ -231,10 +231,7 @@ def _source_quality(outcome_events: list[WorkflowEvent]) -> list[SourceQuality]:
     for source, outcomes in sorted(buckets.items()):
         applications = outcomes["applied"] + outcomes["submitted"]
         responses = (
-            outcomes["response"]
-            + outcomes["interview"]
-            + outcomes["offer"]
-            + outcomes["rejection"]
+            outcomes["response"] + outcomes["interview"] + outcomes["offer"] + outcomes["rejection"]
         )
         interviews = outcomes["interview"] + outcomes["offer"]
         offers = outcomes["offer"]

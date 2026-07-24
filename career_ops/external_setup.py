@@ -81,17 +81,17 @@ def _openai_check(settings: Settings) -> SetupCheck:
 def _logfire_check(settings: Settings) -> SetupCheck:
     local_auth_project = _local_logfire_project()
     has_token = bool(os.getenv("LOGFIRE_TOKEN") or settings.logfire_token)
-    ready = has_token or local_auth_project is not None or bool(
-        settings.logfire_project and settings.logfire_base_url
+    ready = (
+        has_token
+        or local_auth_project is not None
+        or bool(settings.logfire_project and settings.logfire_base_url)
     )
     target = local_auth_project or f"{settings.logfire_project} at {settings.logfire_base_url}"
     return SetupCheck(
         name="Logfire",
         ready=ready,
         detail=(
-            f"Target {target}."
-            if ready
-            else "Run logfire auth/projects use or set LOGFIRE_TOKEN."
+            f"Target {target}." if ready else "Run logfire auth/projects use or set LOGFIRE_TOKEN."
         ),
     )
 
@@ -103,9 +103,7 @@ def _gateway_check(settings: Settings) -> SetupCheck:
             ready=True,
             detail="Disabled; direct provider credentials will be used.",
         )
-    has_key = bool(
-        os.getenv("PYDANTIC_AI_GATEWAY_API_KEY") or settings.pydantic_ai_gateway_api_key
-    )
+    has_key = bool(os.getenv("PYDANTIC_AI_GATEWAY_API_KEY") or settings.pydantic_ai_gateway_api_key)
     return SetupCheck(
         name="Pydantic AI Gateway",
         ready=has_key,

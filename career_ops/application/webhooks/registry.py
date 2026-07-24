@@ -1,6 +1,10 @@
 from collections.abc import Mapping
 
-from career_ops.application.webhooks.handlers import NotionWebhookHandler, WebhookHandler
+from career_ops.application.webhooks.handlers import (
+    GitHubWebhookHandler,
+    NotionWebhookHandler,
+    WebhookHandler,
+)
 from career_ops.application.webhooks.verification import (
     NotConfiguredWebhookVerifier,
     WebhookVerifier,
@@ -26,12 +30,14 @@ class WebhookSourceRegistry:
         self.observability = observability
         self._configs = self._build_configs(settings)
         self._handlers: dict[tuple[str, str], WebhookHandler] = {
-            ("career-forge", "notion"): NotionWebhookHandler(observability)
+            ("career-forge", "github"): GitHubWebhookHandler(observability),
+            ("career-forge", "notion"): NotionWebhookHandler(observability),
         }
         if handlers:
             self._handlers.update(handlers)
         self._verifiers: dict[tuple[str, str], WebhookVerifier] = {
-            ("career-forge", "notion"): NotConfiguredWebhookVerifier()
+            ("career-forge", "github"): NotConfiguredWebhookVerifier(),
+            ("career-forge", "notion"): NotConfiguredWebhookVerifier(),
         }
         if verifiers:
             self._verifiers.update(verifiers)
@@ -45,6 +51,14 @@ class WebhookSourceRegistry:
                 enabled=True,
                 verifier_name="notion" if settings.webhooks_notion_secret else None,
                 handler_name="notion",
+            )
+        if settings.webhooks_enabled and settings.webhooks_github_enabled:
+            configs[("career-forge", "github")] = WebhookSourceConfig(
+                project_name="career-forge",
+                source_name="github",
+                enabled=True,
+                verifier_name="github" if settings.webhooks_github_secret else None,
+                handler_name="github",
             )
         return configs
 

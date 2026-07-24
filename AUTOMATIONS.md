@@ -95,6 +95,12 @@ The first supported source is:
 https://hooks.concordmanage.com/career-forge/notion
 ```
 
+GitHub is also accepted as an observable automation trigger:
+
+```text
+https://hooks.concordmanage.com/career-forge/github
+```
+
 Local development maps the public domain to the FastAPI route:
 
 ```text
@@ -115,6 +121,33 @@ The automation path is intentionally short:
 
 Future webhook sources should add a handler, optional verifier, registry entry,
 tests, and a source-specific Logfire channel.
+
+## GitHub to Linear
+
+Linear is the execution system for engineering work. Notion should not duplicate
+GitHub issue or PR state unless that state becomes durable career knowledge.
+
+Current local support:
+
+- `career-forge/github` webhook routing
+- redacted header handling
+- idempotent receipt keys
+- source-specific Logfire channel metadata
+
+Planned automation sequence:
+
+1. GitHub emits issue, pull request, review, or check-suite events.
+2. Career Forge records the event through the webhook intake path.
+3. A GitHub-to-Linear planner decides whether the event needs a Linear issue,
+   comment, status transition, or no action.
+4. Linear receives the execution update.
+5. Notion receives only durable summaries, decisions, or career-search records.
+
+Keep the ownership boundary strict:
+
+- GitHub owns code, pull requests, checks, and repository-native review.
+- Linear owns execution workflow, priorities, project state, and next actions.
+- Notion owns long-term context, reusable knowledge, and career records.
 
 ## Confidence and Fallback
 
