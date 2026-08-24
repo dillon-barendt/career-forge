@@ -1,7 +1,9 @@
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
+
+from career_ops.compat import UTC
 
 SignatureStatus = Literal["verified", "unverified", "not_configured", "failed"]
 ProcessingStatus = Literal["accepted", "ignored", "duplicate", "failed"]

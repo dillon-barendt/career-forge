@@ -8,7 +8,8 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 
-from career_ops.ai.deterministic import DeterministicAIService
+from career_ops.ai.contracts import CareerAIService
+from career_ops.ai.mock import MockAIService
 from career_ops.models import (
     EmailCategory,
     EmailMessage,
@@ -50,17 +51,14 @@ BenchmarkCase = Annotated[
 CASE_LIST_ADAPTER = TypeAdapter(list[BenchmarkCase])
 
 
-class BenchmarkCaseResult(BaseModel):
+class BenchmarkDetail(BaseModel):
     """Records one benchmark observation without hiding failed expectations."""
 
     model_config = ConfigDict(frozen=True)
 
-    case_id: str
-    kind: Literal["email", "opportunity"]
-    prompt: str
+    prompt_id: str
     latency_ms: float
     success: bool
-    output: str
     error: str | None = None
 
 
@@ -69,14 +67,12 @@ class BenchmarkReport(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    schema_version: str = "1.0"
-    total_cases: int
-    successful_cases: int
+    n: int
+    median_ms: float
+    p95_ms: float
+    throughput_per_min: float
     success_rate: float
-    median_latency_ms: float
-    p95_latency_ms: float
-    throughput_per_second: float
-    results: list[BenchmarkCaseResult]
+    details: list[BenchmarkDetail]
 
 
 def load_cases(path: Path) -> list[BenchmarkCase]:
@@ -97,64 +93,68 @@ def nearest_rank_p95(latencies_ms: list[float]) -> float:
 def run_benchmark(
     cases: Sequence[BenchmarkCase],
     *,
-    service: DeterministicAIService,
+    service: CareerAIService,
     clock: Callable[[], float] = perf_counter,
 ) -> BenchmarkReport:
     """Measures deterministic agent latency and validates every expected outcome."""
 
-    results: list[BenchmarkCaseResult] = []
+    details: list[BenchmarkDetail] = []
     for case in cases:
+        prepared = _prepare_case(case)
         started = clock()
         try:
-            evaluation = _invoke_case(case, service)
+            evaluation = _invoke_case(prepared, service)
         except Exception as exc:
             latency_ms = round((clock() - started) * 1_000, 6)
-            output, error = "", f"{type(exc).__name__}: {exc}"
+            error = f"{type(exc).__name__}: {exc}"
         else:
             latency_ms = round((clock() - started) * 1_000, 6)
             try:
-                output, error = _validate_case(case, evaluation)
+                _, error = _validate_case(case, evaluation)
             except Exception as exc:
-                output, error = "", f"{type(exc).__name__}: {exc}"
-        results.append(
-            BenchmarkCaseResult(
-                case_id=case.id,
-                kind=case.kind,
-                prompt=case.prompt,
+                error = f"{type(exc).__name__}: {exc}"
+        details.append(
+            BenchmarkDetail(
+                prompt_id=case.id,
                 latency_ms=latency_ms,
                 success=error is None,
-                output=output,
                 error=error,
             )
         )
 
-    latencies = [result.latency_ms for result in results]
+    latencies = [detail.latency_ms for detail in details]
     total_seconds = sum(latencies) / 1_000
-    successful = sum(result.success for result in results)
-    total = len(results)
+    successful = sum(detail.success for detail in details)
+    total = len(details)
     return BenchmarkReport(
-        total_cases=total,
-        successful_cases=successful,
+        n=total,
+        median_ms=median(latencies) if latencies else 0.0,
+        p95_ms=nearest_rank_p95(latencies),
+        throughput_per_min=total / total_seconds * 60 if total_seconds else 0.0,
         success_rate=successful / total if total else 0.0,
-        median_latency_ms=median(latencies) if latencies else 0.0,
-        p95_latency_ms=nearest_rank_p95(latencies),
-        throughput_per_second=total / total_seconds if total_seconds else 0.0,
-        results=results,
+        details=details,
     )
 
 
 def _invoke_case(
-    case: BenchmarkCase,
-    service: DeterministicAIService,
+    prepared: EmailMessage | JobPosting,
+    service: CareerAIService,
 ) -> PydanticAIEmailEvaluation | OpportunityEvaluation:
-    if isinstance(case, EmailBenchmarkCase):
-        message = case.message.model_copy(update={"body": f"{case.prompt}\n\n{case.message.body}"})
-        return service.classify_email(message)
+    if isinstance(prepared, EmailMessage):
+        return service.classify_email(prepared)
 
-    posting = case.posting.model_copy(
+    return service.evaluate(prepared)
+
+
+def _prepare_case(case: BenchmarkCase) -> EmailMessage | JobPosting:
+    """Inject the declared prompt before service-call timing begins."""
+
+    if isinstance(case, EmailBenchmarkCase):
+        return case.message.model_copy(update={"body": f"{case.prompt}\n\n{case.message.body}"})
+
+    return case.posting.model_copy(
         update={"description": f"{case.prompt}\n\n{case.posting.description}"}
     )
-    return service.evaluate(posting)
 
 
 def _validate_case(
@@ -198,11 +198,11 @@ def render_human(report: BenchmarkReport) -> str:
     return "\n".join(
         [
             "CareerForge benchmark",
-            f"cases:        {report.successful_cases}/{report.total_cases} successful",
+            f"n:            {report.n}",
             f"success rate: {report.success_rate:.1%}",
-            f"median:       {report.median_latency_ms:.3f} ms",
-            f"p95:          {report.p95_latency_ms:.3f} ms",
-            f"throughput:   {report.throughput_per_second:.1f} prompts/s",
+            f"median:       {report.median_ms:.3f} ms",
+            f"p95:          {report.p95_ms:.3f} ms",
+            f"throughput:   {report.throughput_per_min:.1f} prompts/min",
         ]
     )
 
@@ -219,11 +219,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     parser.add_argument("--output", type=Path, help="Optional JSON report path.")
     args = parser.parse_args(argv)
-    report = run_benchmark(load_cases(args.cases), service=DeterministicAIService())
+    report = run_benchmark(load_cases(args.cases), service=MockAIService())
     if args.output is not None:
         write_report(report, args.output)
     print(render_human(report))
-    return 0 if report.successful_cases == report.total_cases else 1
+    return 0 if all(detail.success for detail in report.details) else 1
 
 
 if __name__ == "__main__":

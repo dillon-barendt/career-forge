@@ -1,12 +1,14 @@
-from datetime import UTC, datetime
+from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
 from career_ops.agents.gmail import GmailAgent
 from career_ops.agents.opportunity import OpportunityAgent
 from career_ops.agents.orchestrator import WorkflowOrchestrator
-from career_ops.ai.deterministic import DeterministicAIService
+from career_ops.ai.contracts import CareerAIService
+from career_ops.ai.mock import MockAIService
 from career_ops.automation.gmail_ingestion import GmailIngestionPipeline
+from career_ops.compat import UTC
 from career_ops.ingestion.job_ingestion import JobIngestionPipeline
 from career_ops.materials.resume_tailor import build_resume_tailoring_notes
 from career_ops.models import EmailMessage
@@ -50,15 +52,15 @@ class ShowcaseReport(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     schema_version: str = "1.0"
-    mode: str = "deterministic"
+    mode: str = "mock"
     scenarios: list[ShowcaseScenario]
 
 
 class ShowcaseRunner:
     """Runs representative career workflows through the real agent boundaries."""
 
-    def __init__(self, ai_service: DeterministicAIService | None = None) -> None:
-        service = ai_service or DeterministicAIService()
+    def __init__(self, ai_service: CareerAIService | None = None) -> None:
+        service = ai_service if ai_service is not None else MockAIService()
         self.orchestrator = WorkflowOrchestrator(
             gmail_agent=GmailAgent(GmailIngestionPipeline(ai_service=service)),
             opportunity_agent=OpportunityAgent(

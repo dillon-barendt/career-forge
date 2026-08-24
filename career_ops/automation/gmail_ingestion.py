@@ -3,7 +3,7 @@ from datetime import timedelta
 from email.utils import parseaddr
 
 from career_ops.ai.contracts import EmailClassificationService
-from career_ops.ai.pydantic_ai_service import PydanticAIService
+from career_ops.ai.factory import build_ai_service
 from career_ops.models import (
     AuditEvent,
     EmailCategory,
@@ -26,7 +26,7 @@ class GmailIngestionPipeline:
     """Classify Gmail messages and create idempotent Notion mutation plans."""
 
     def __init__(self, ai_service: EmailClassificationService | None = None) -> None:
-        self.ai_service = ai_service or PydanticAIService()
+        self.ai_service = ai_service if ai_service is not None else build_ai_service()
 
     def classify(self, message: EmailMessage) -> EmailClassification:
         ai_result = self.ai_service.classify_email(message)
@@ -36,6 +36,8 @@ class GmailIngestionPipeline:
             reasons=ai_result.reasons,
             requires_human_review=ai_result.human_review_required,
             prompt_version=ai_result.prompt_version,
+            model_name=ai_result.model_name,
+            fallback_status=ai_result.fallback_status,
         )
 
     def plan(self, message: EmailMessage) -> GmailIngestionPlan:

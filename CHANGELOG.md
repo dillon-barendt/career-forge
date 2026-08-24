@@ -2,6 +2,39 @@
 
 All notable changes to Career Forge are tracked here.
 
+## 0.6.0 - 2026-08-24
+
+### Added
+
+- Python 3.10, 3.11, and 3.12 test matrix with a dependent Python 3.12 quality
+  job for Ruff, Pyright, benchmark, host mock smoke, Docker mock smoke, and
+  benchmark artifact upload.
+- Explicit `CAREER_FORGE_MODE=mock` and `CAREER_FORGE_MODE=real` runtime
+  selection through a centralized AI service factory.
+- Isolated, versioned prompt builders and typed output parsers for email and
+  opportunity model calls.
+- Configurable mock responses for deterministic failure and pipeline tests.
+
+### Changed
+
+- Mock mode is now the credential-free default for local workflows, CI, and the
+  non-root Docker image; real mode validates provider credentials before model
+  construction and disables implicit local fallback.
+- Gmail and job-ingestion pipelines now construct their AI services through the
+  configured factory when a dependency is not injected.
+- The public benchmark JSON now has the exact top-level fields `n`,
+  `median_ms`, `p95_ms`, `throughput_per_min`, `success_rate`, and `details`;
+  detail records contain `prompt_id`, `latency_ms`, `success`, and `error`.
+- Release documentation now records mock/real commands, factory and
+  prompt-codec boundaries, measured benchmark values, and the secret-free CI
+  contract.
+
+### Fixed
+
+- Gmail acknowledgements now occur only after successful downstream writes.
+- Python-version-specific compatibility shims prevent imports from depending on
+  APIs unavailable before Python 3.11.
+
 ## 0.5.0 - 2026-08-24
 
 ### Added

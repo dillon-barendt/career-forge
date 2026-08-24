@@ -32,12 +32,20 @@ def _message() -> EmailMessage:
 def test_classified_gmail_message_contract_includes_operator_metadata() -> None:
     message = _message()
     plan = GmailIngestionPipeline().plan(message)
+    plan = plan.model_copy(
+        update={
+            "classification": plan.classification.model_copy(
+                update={
+                    "model_name": "test:plan-owned",
+                    "fallback_status": "plan-owned",
+                }
+            )
+        }
+    )
 
     classified = ClassifiedGmailMessage.from_plan(
         message=message,
         plan=plan,
-        model_name="openai:gpt-5.2",
-        fallback_status="local_fallback",
     )
 
     assert classified.message_id == "msg_1"
@@ -46,8 +54,8 @@ def test_classified_gmail_message_contract_includes_operator_metadata() -> None:
     assert classified.confidence >= 0.8
     assert classified.recommended_notion_intent == "upsert"
     assert classified.prompt_version == "email-classifier-v1"
-    assert classified.model_name == "openai:gpt-5.2"
-    assert classified.fallback_status == "local_fallback"
+    assert classified.model_name == "test:plan-owned"
+    assert classified.fallback_status == "plan-owned"
     assert classified.extracted_opportunity_fields["company"] == "Acme"
     assert classified.extracted_company_fields["name"] == "Acme"
 

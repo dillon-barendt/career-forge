@@ -1,9 +1,10 @@
-from enum import StrEnum
 from typing import Final
 
 from pydantic import BaseModel, Field, HttpUrl, computed_field
 from pydantic_graph import Graph, GraphBuilder
 from pydantic_graph.step import StepContext
+
+from career_ops.compat import StrEnum
 
 TransitionMap = dict["OpportunityLifecycleState", tuple["OpportunityLifecycleState", ...]]
 

@@ -73,7 +73,14 @@ class GmailSyncService:
 
             try:
                 with self._span("career_ops.gmail_message", message_id=message.message_id):
-                    self._process_message(message, result)
+                    execution_succeeded = self._process_message(message, result)
+                if not execution_succeeded:
+                    continue
+                if not dry_run:
+                    self.gmail_client.acknowledge_processed(message.message_id)
+                    self.state_store.mark_processed("gmail", message.message_id)
+                    self.state_store.set_checkpoint(GMAIL_SYNC_CHECKPOINT_KEY, message.message_id)
+                result.processed += 1
             except Exception as exc:  # noqa: BLE001 - message-level recovery boundary.
                 result.failed += 1
                 result.errors.append(str(exc))
@@ -97,12 +104,6 @@ class GmailSyncService:
                 )
                 continue
 
-            if not dry_run:
-                self.state_store.mark_processed("gmail", message.message_id)
-                self.state_store.set_checkpoint(GMAIL_SYNC_CHECKPOINT_KEY, message.message_id)
-                self.gmail_client.acknowledge_processed(message.message_id)
-            result.processed += 1
-
         self.event_log.append(
             event_type=EventType.GMAIL_SYNC_COMPLETED,
             source="gmail",
@@ -112,7 +113,7 @@ class GmailSyncService:
         )
         return result
 
-    def _process_message(self, message: EmailMessage, result: GmailSyncResult) -> None:
+    def _process_message(self, message: EmailMessage, result: GmailSyncResult) -> bool:
         self.event_log.append(
             event_type=EventType.GMAIL_MESSAGE_SELECTED,
             source="gmail",
@@ -132,7 +133,8 @@ class GmailSyncService:
             "confidence": plan.classification.confidence,
             "requires_human_review": plan.classification.requires_human_review,
             "prompt_version": plan.classification.prompt_version,
-            "model_name": self.ingestion_pipeline.ai_service.model,
+            "model_name": plan.classification.model_name,
+            "fallback_status": plan.classification.fallback_status,
         }
         self.event_log.append(
             event_type=EventType.GMAIL_MESSAGE_CLASSIFIED,
@@ -186,12 +188,19 @@ class GmailSyncService:
         result.mutations_planned += len(mutations)
         notion_result = self.notion_executor.execute(mutations)
         result.mutations_executed += notion_result.executed
+        if notion_result.failed:
+            errors = [record.error for record in notion_result.records if record.error]
+            detail = "; ".join(errors) or "unknown Notion execution error"
+            result.failed += 1
+            result.errors.append(f"Notion mutation execution failed: {detail}")
+            return False
         if self.observability is not None:
             self.observability.increment(
                 "career_forge.gmail.messages",
                 status="classified",
                 low_confidence=plan.classification.requires_human_review,
             )
+        return True
 
     def _span(self, name: str, **attributes: object) -> Iterator[None]:
         if self.observability is None:

@@ -1,10 +1,11 @@
 from collections import Counter, defaultdict
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from statistics import mean
 from typing import Any
 
 from pydantic import BaseModel, Field
 
+from career_ops.compat import UTC
 from career_ops.models import EventType, WorkflowEvent
 
 LOW_CONFIDENCE_THRESHOLD = 0.65

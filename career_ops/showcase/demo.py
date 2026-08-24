@@ -8,7 +8,7 @@ def render_human(report: ShowcaseReport) -> str:
     """Renders the stable demo report for terminal viewers."""
 
     lines = [
-        "CareerForge — deterministic agent demo",
+        "CareerForge — mock agent demo",
         "AI agents that forge career data into action.",
         "",
     ]
@@ -30,7 +30,7 @@ def _result_summary(result: dict[str, str | int | float | bool]) -> str:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Runs the deterministic showcase in human or JSON mode."""
+    """Runs the mock showcase in human or JSON mode."""
 
     parser = argparse.ArgumentParser(description="Run the CareerForge agent showcase.")
     parser.add_argument("--json", action="store_true", help="Print the typed report as JSON.")

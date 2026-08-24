@@ -79,6 +79,22 @@
 - CI gates for lint, format, scoped typing, 80% core coverage, smoke demo, benchmark, and Docker
 - public-first README, terminal demo GIF, community standards, and MIT license
 
+### Version 0.6.0: Mock-Mode Hardening
+
+- Python 3.10–3.12 support enforced by metadata and matrix CI
+- explicit mock-default and fail-fast real-provider runtime modes
+- centralized AI service factory and isolated prompt-codec boundary
+- Gmail and job-ingestion pipelines wired through configured AI services
+- exact benchmark schema: `n`, `median_ms`, `p95_ms`,
+  `throughput_per_min`, `success_rate`, and `details`
+- secret-free host and non-root Docker mock smoke gates
+- locked Docker dependency installation through `uv.lock`
+
+The 0.6.0 implementation and host-side local verification are complete. Release
+readiness still requires the pull-request Actions matrix, benchmark artifact
+upload, and Docker build/non-root smoke gates; none of those remote gates is
+recorded as passed yet.
+
 ## Recommended Phase 10: Live Validation and Reviewed Apply
 
 1. Run the Phase 8 loop against the real dedicated Gmail inbox.

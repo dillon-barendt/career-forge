@@ -1,11 +1,12 @@
 import json
 import os
-from enum import StrEnum
 from pathlib import Path
 
 from pydantic import BaseModel, Field
 
-from career_ops.config import Settings
+from career_ops.ai.factory import AIConfigurationError, resolve_real_provider_configuration
+from career_ops.compat import StrEnum
+from career_ops.config import RuntimeMode, Settings
 
 
 class SetupStatus(StrEnum):
@@ -169,42 +170,32 @@ def _notion_check(settings: Settings) -> SetupValidationItem:
 
 
 def _ai_provider_check(settings: Settings) -> SetupValidationItem:
-    provider = settings.ai_provider.strip().lower()
-    if provider in {"deterministic", "local"}:
+    if settings.mode is RuntimeMode.MOCK:
         return SetupValidationItem(
             name="AI provider credentials",
             status=SetupStatus.OK,
-            detail="Deterministic local fallback is selected.",
-            env_var="CAREER_FORGE_AI_PROVIDER",
+            detail="Mock mode is deterministic and requires no AI credentials.",
+            env_var="CAREER_FORGE_MODE",
         )
-    if settings.pydantic_ai_gateway_enabled:
-        has_gateway_key = bool(
-            os.getenv("PYDANTIC_AI_GATEWAY_API_KEY") or settings.pydantic_ai_gateway_api_key
-        )
+    try:
+        resolve_real_provider_configuration(settings)
+    except AIConfigurationError as exc:
         return SetupValidationItem(
             name="AI provider credentials",
-            status=SetupStatus.OK if has_gateway_key else SetupStatus.ERROR,
-            detail=(
-                "Pydantic AI Gateway key is configured."
-                if has_gateway_key
-                else "Pydantic AI Gateway is enabled but no key is configured."
-            ),
-            suggested_fix=""
-            if has_gateway_key
-            else "Set CAREER_FORGE_PYDANTIC_AI_GATEWAY_API_KEY.",
-            env_var="CAREER_FORGE_PYDANTIC_AI_GATEWAY_API_KEY",
+            status=SetupStatus.ERROR,
+            detail=str(exc),
+            suggested_fix=f"Set {exc.env_var} before using real mode.",
+            env_var=exc.env_var,
         )
-    has_openai_key = bool(os.getenv("OPENAI_API_KEY") or settings.openai_api_key)
     return SetupValidationItem(
         name="AI provider credentials",
-        status=SetupStatus.OK if has_openai_key else SetupStatus.ERROR,
-        detail=(
-            "OpenAI-compatible provider key is configured."
-            if has_openai_key
-            else "AI provider requires credentials for live model calls."
+        status=SetupStatus.OK,
+        detail="Real-mode provider credentials are configured.",
+        env_var=(
+            "CAREER_FORGE_PYDANTIC_AI_GATEWAY_API_KEY"
+            if settings.pydantic_ai_gateway_enabled
+            else "CAREER_FORGE_OPENAI_API_KEY"
         ),
-        suggested_fix="" if has_openai_key else "Set CAREER_FORGE_OPENAI_API_KEY.",
-        env_var="CAREER_FORGE_OPENAI_API_KEY",
     )
 
 

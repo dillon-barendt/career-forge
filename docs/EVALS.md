@@ -35,7 +35,24 @@ Run the reproducible benchmark and write its machine-readable report:
 uv run python benchmark/bench.py --output benchmark/results.json
 ```
 
-CI uploads a fresh benchmark JSON artifact for every push and pull request.
+The report has exactly these top-level fields: `n`, `median_ms`, `p95_ms`,
+`throughput_per_min`, `success_rate`, and `details`. Each `details` item has
+exactly `prompt_id`, `latency_ms`, `success`, and `error`.
+
+Fresh 0.6.0 deterministic measurements are:
+
+| Field | Value |
+| --- | ---: |
+| `n` | 20 |
+| `median_ms` | 0.0144865 |
+| `p95_ms` | 0.048673 |
+| `throughput_per_min` | 2,626,056.166964651 |
+| `success_rate` | 1.0 |
+
+CI runs the benchmark in explicit `CAREER_FORGE_MODE=mock` after the Python
+3.10–3.12 test matrix passes, then uploads a fresh `benchmark-results.json`
+artifact for every push and pull request. No provider credential is available
+to this default CI path.
 
 This wraps the JSON files in `pydantic_evals.Dataset`, runs deterministic local
 classifier/evaluator behavior against the fixtures, emits Logfire eval traces,
