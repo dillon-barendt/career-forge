@@ -9,7 +9,13 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 
 from career_ops.ai.deterministic import DeterministicAIService
-from career_ops.models import EmailCategory, EmailMessage, JobPosting
+from career_ops.models import (
+    EmailCategory,
+    EmailMessage,
+    JobPosting,
+    OpportunityEvaluation,
+    PydanticAIEmailEvaluation,
+)
 
 
 class EmailBenchmarkCase(BaseModel):
@@ -51,6 +57,7 @@ class BenchmarkCaseResult(BaseModel):
 
     case_id: str
     kind: Literal["email", "opportunity"]
+    prompt: str
     latency_ms: float
     success: bool
     output: str
@@ -99,14 +106,21 @@ def run_benchmark(
     for case in cases:
         started = clock()
         try:
-            output, error = _evaluate_case(case, service)
+            evaluation = _invoke_case(case, service)
         except Exception as exc:
+            latency_ms = round((clock() - started) * 1_000, 6)
             output, error = "", f"{type(exc).__name__}: {exc}"
-        latency_ms = round((clock() - started) * 1_000, 6)
+        else:
+            latency_ms = round((clock() - started) * 1_000, 6)
+            try:
+                output, error = _validate_case(case, evaluation)
+            except Exception as exc:
+                output, error = "", f"{type(exc).__name__}: {exc}"
         results.append(
             BenchmarkCaseResult(
                 case_id=case.id,
                 kind=case.kind,
+                prompt=case.prompt,
                 latency_ms=latency_ms,
                 success=error is None,
                 output=output,
@@ -129,12 +143,27 @@ def run_benchmark(
     )
 
 
-def _evaluate_case(
+def _invoke_case(
     case: BenchmarkCase,
     service: DeterministicAIService,
+) -> PydanticAIEmailEvaluation | OpportunityEvaluation:
+    if isinstance(case, EmailBenchmarkCase):
+        message = case.message.model_copy(update={"body": f"{case.prompt}\n\n{case.message.body}"})
+        return service.classify_email(message)
+
+    posting = case.posting.model_copy(
+        update={"description": f"{case.prompt}\n\n{case.posting.description}"}
+    )
+    return service.evaluate(posting)
+
+
+def _validate_case(
+    case: BenchmarkCase,
+    result: PydanticAIEmailEvaluation | OpportunityEvaluation,
 ) -> tuple[str, str | None]:
     if isinstance(case, EmailBenchmarkCase):
-        result = service.classify_email(case.message)
+        if not isinstance(result, PydanticAIEmailEvaluation):
+            raise TypeError("email benchmark returned an opportunity evaluation")
         output = result.classification.value
         if result.classification != case.expected_classification:
             return (
@@ -143,7 +172,8 @@ def _evaluate_case(
             )
         return output, None
 
-    result = service.evaluate(case.posting)
+    if not isinstance(result, OpportunityEvaluation):
+        raise TypeError("opportunity benchmark returned an email evaluation")
     output = f"fit_score={result.fit_score}, action={result.suggested_next_action}"
     if result.fit_score < case.min_fit_score:
         return output, f"expected fit score >= {case.min_fit_score}, received {result.fit_score}"

@@ -30,12 +30,6 @@ class DeterministicAIService:
                 "unsubscribe" in text or "newsletter" in text,
             ),
             (
-                EmailCategory.REJECTION,
-                0.9,
-                "Rejection language detected.",
-                any(term in text for term in ("not moving forward", "unfortunately", "declined")),
-            ),
-            (
                 EmailCategory.OFFER,
                 0.88,
                 "Offer language detected.",
@@ -49,6 +43,12 @@ class DeterministicAIService:
                 and any(
                     term in text for term in ("invite", "schedule", "availability", "available")
                 ),
+            ),
+            (
+                EmailCategory.REJECTION,
+                0.9,
+                "Rejection language detected.",
+                any(term in text for term in ("not moving forward", "unfortunately", "declined")),
             ),
             (
                 EmailCategory.INTERVIEW_CONFIRMATION,

@@ -44,6 +44,17 @@ def test_deterministic_service_handles_offer_and_follow_up_signals() -> None:
     assert follow_up.classification == EmailCategory.RECRUITER_FOLLOW_UP
 
 
+def test_deterministic_service_prioritizes_rescheduling_over_generic_rejection_words() -> None:
+    result = DeterministicAIService().classify_email(
+        _email(
+            "Interview update",
+            "Unfortunately we need to reschedule your interview; please send availability.",
+        )
+    )
+
+    assert result.classification == EmailCategory.INTERVIEW_INVITATION
+
+
 def test_deterministic_service_evaluates_typed_opportunity() -> None:
     posting = JobPosting(
         source_url="https://jobs.ashbyhq.com/acme/platform",

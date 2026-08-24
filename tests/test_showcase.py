@@ -1,5 +1,7 @@
 import json
 
+import pytest
+
 from career_ops.showcase.demo import main, render_human
 from career_ops.showcase.runner import ShowcaseRunner
 
@@ -22,6 +24,18 @@ def test_showcase_runs_three_real_agent_scenarios() -> None:
     assert report.scenarios[1].result["next_action"] == "prioritize"
     assert report.scenarios[2].result["kind"] == "resume_tailoring"
     assert "Principal Platform Engineer" in report.scenarios[2].result["preview"]
+
+
+def test_showcase_does_not_load_live_settings(monkeypatch: pytest.MonkeyPatch) -> None:
+    def fail_if_settings_are_loaded() -> None:
+        raise AssertionError("credential-free showcase loaded live settings")
+
+    monkeypatch.setattr(
+        "career_ops.ingestion.job_ingestion.get_settings",
+        fail_if_settings_are_loaded,
+    )
+
+    assert ShowcaseRunner().run().mode == "deterministic"
 
 
 def test_showcase_human_output_is_scannable() -> None:

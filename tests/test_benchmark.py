@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import benchmark.bench as benchmark_module
+import pytest
 from benchmark.bench import (
     EmailBenchmarkCase,
     load_cases,
@@ -19,6 +21,17 @@ class FakeClock:
 
     def __call__(self) -> float:
         return next(self.values)
+
+
+class MutableClock:
+    def __init__(self) -> None:
+        self.now = 0.0
+
+    def __call__(self) -> float:
+        return self.now
+
+    def advance(self, seconds: float) -> None:
+        self.now += seconds
 
 
 def _email_case(case_id: str, expected: EmailCategory) -> EmailBenchmarkCase:
@@ -71,6 +84,49 @@ def test_default_benchmark_has_exactly_twenty_prompts() -> None:
     assert len(cases) == 20
     assert len({case.id for case in cases}) == 20
     assert all(case.prompt.strip() for case in cases)
+
+
+def test_email_benchmark_executes_declared_prompt() -> None:
+    case = EmailBenchmarkCase(
+        id="prompt-driven",
+        prompt="Please send availability so we can schedule your interview.",
+        message=EmailMessage(
+            message_id="prompt-driven",
+            thread_id="thread-prompt-driven",
+            sender="Operations <ops@example.com>",
+            recipients=["candidate@example.com"],
+            subject="Update",
+            body="No classification signal is present here.",
+            received_at="2026-08-24T12:00:00Z",
+        ),
+        expected_classification=EmailCategory.INTERVIEW_INVITATION,
+    )
+
+    report = run_benchmark([case], service=DeterministicAIService())
+
+    assert report.success_rate == 1.0
+    assert report.results[0].prompt == case.prompt
+
+
+def test_benchmark_stops_clock_before_expectation_validation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    clock = MutableClock()
+    original_validate = benchmark_module._validate_case
+
+    def slow_validation(*args: object, **kwargs: object) -> tuple[str, str | None]:
+        clock.advance(1.0)
+        return original_validate(*args, **kwargs)
+
+    monkeypatch.setattr(benchmark_module, "_validate_case", slow_validation)
+
+    report = run_benchmark(
+        [_email_case("case-1", EmailCategory.INTERVIEW_INVITATION)],
+        service=DeterministicAIService(),
+        clock=clock,
+    )
+
+    assert report.results[0].latency_ms == 0.0
 
 
 def test_benchmark_report_writes_machine_readable_json(tmp_path) -> None:

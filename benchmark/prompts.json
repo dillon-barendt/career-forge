@@ -269,7 +269,7 @@
   {
     "kind": "opportunity",
     "id": "opportunity-clearance",
-    "prompt": "Deprioritize a clearance-constrained Python role.",
+    "prompt": "Deprioritize a role blocked by a clearance requirement.",
     "posting": {
       "source_url": "https://jobs.example.com/8",
       "provider": "fixture",

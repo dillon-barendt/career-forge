@@ -18,7 +18,7 @@ materials—while keeping external effects explicit and auditable.
 
 - **See it in one minute:** a deterministic three-agent workflow, no credentials required.
 - **Trust the output:** Pydantic v2 contracts, dependency-injected providers, append-only events, and dry-run-first writes.
-- **Reproduce the evidence:** Docker, 81-test CI, 81%+ core coverage, and a machine-readable 20-prompt benchmark.
+- **Reproduce the evidence:** Docker, 85-test CI, 81%+ core coverage, and a machine-readable 20-prompt benchmark.
 - **Extend it cleanly:** application logic stays independent from Gmail, Notion, ATS, model, and observability adapters.
 
 ## Run the demo in three commands
@@ -109,9 +109,9 @@ Latest local deterministic run:
 | Metric | Result |
 | --- | ---: |
 | Success rate | 100% (20/20) |
-| Median latency | 0.010 ms |
-| p95 latency | 0.039 ms |
-| Throughput | 73,537 prompts/s |
+| Median latency | 0.012 ms |
+| p95 latency | 0.041 ms |
+| Throughput | 62,318 prompts/s |
 
 Results vary by hardware. The committed [JSON report](benchmark/results.json)
 contains the machine-readable evidence; CI produces a fresh report artifact on

@@ -18,9 +18,14 @@ class JobIngestionPipeline:
         evaluator: OpportunityEvaluationService | None = None,
     ) -> None:
         self.providers = providers or default_job_provider_registry()
-        settings = get_settings()
-        self.fetcher = fetcher or HttpxJobPageFetcher(timeout=settings.job_fetch_timeout_seconds)
-        self.evaluator = evaluator or PydanticAIService(model=settings.pydantic_ai_model)
+        if fetcher is None:
+            settings = get_settings()
+            fetcher = HttpxJobPageFetcher(timeout=settings.job_fetch_timeout_seconds)
+        if evaluator is None:
+            settings = get_settings()
+            evaluator = PydanticAIService(model=settings.pydantic_ai_model)
+        self.fetcher = fetcher
+        self.evaluator = evaluator
 
     def ingest_url(self, url: str) -> JobIngestionResult:
         provider = self.providers.find(url)
