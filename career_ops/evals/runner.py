@@ -4,6 +4,9 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from pydantic_evals import Case, Dataset
+from pydantic_evals.evaluators import Evaluator, EvaluatorContext
+
 from career_ops.ai.pydantic_ai_service import (
     EMAIL_CLASSIFIER_PROMPT_VERSION,
     OPPORTUNITY_EVALUATOR_PROMPT_VERSION,
@@ -11,8 +14,6 @@ from career_ops.ai.pydantic_ai_service import (
 )
 from career_ops.models import EmailMessage, JobPosting
 from career_ops.observability import Observability
-from pydantic_evals import Case, Dataset
-from pydantic_evals.evaluators import Evaluator, EvaluatorContext
 
 
 @dataclass

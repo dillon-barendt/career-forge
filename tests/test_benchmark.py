@@ -8,6 +8,7 @@ from benchmark.bench import (
     run_benchmark,
     write_report,
 )
+
 from career_ops.ai.deterministic import DeterministicAIService
 from career_ops.models import EmailCategory, EmailMessage
 

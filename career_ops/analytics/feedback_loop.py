@@ -3,8 +3,9 @@ from datetime import UTC, datetime, timedelta
 from statistics import mean
 from typing import Any
 
-from career_ops.models import EventType, WorkflowEvent
 from pydantic import BaseModel, Field
+
+from career_ops.models import EventType, WorkflowEvent
 
 LOW_CONFIDENCE_THRESHOLD = 0.65
 FAILURE_ALERT_THRESHOLD = 3

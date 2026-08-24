@@ -1,10 +1,11 @@
 import json
 
+from typer.testing import CliRunner
+
 from career_ops.cli import app
 from career_ops.config import get_settings
 from career_ops.events.log import EventLog
 from career_ops.models import EventType
-from typer.testing import CliRunner
 
 
 def test_application_health_cli_emits_report_and_review_events(tmp_path, monkeypatch) -> None:

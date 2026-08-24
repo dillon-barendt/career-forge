@@ -6,9 +6,10 @@ from statistics import median
 from time import perf_counter
 from typing import Annotated, Literal
 
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
+
 from career_ops.ai.deterministic import DeterministicAIService
 from career_ops.models import EmailCategory, EmailMessage, JobPosting
-from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 
 
 class EmailBenchmarkCase(BaseModel):

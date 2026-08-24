@@ -55,6 +55,9 @@ src = ["career_ops", "tests"]
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "TCH", "PTH"]
 
+[tool.ruff.lint.isort]
+known-first-party = ["career_ops"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]

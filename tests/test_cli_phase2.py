@@ -1,5 +1,6 @@
-from career_ops.cli import app
 from typer.testing import CliRunner
+
+from career_ops.cli import app
 
 
 def test_today_command_shows_three_action_sections() -> None:

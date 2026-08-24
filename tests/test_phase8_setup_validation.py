@@ -1,9 +1,10 @@
 import json
 
+from typer.testing import CliRunner
+
 from career_ops.cli import app
 from career_ops.config import Settings, get_settings
 from career_ops.setup_validation import SetupStatus, validate_setup
-from typer.testing import CliRunner
 
 
 def test_setup_validation_reports_valid_configuration(tmp_path) -> None:

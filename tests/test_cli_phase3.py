@@ -1,6 +1,7 @@
+from typer.testing import CliRunner
+
 from career_ops.cli import app
 from career_ops.config import get_settings
-from typer.testing import CliRunner
 
 
 def test_phase3_cli_commands_run_in_safe_dry_mode(tmp_path, monkeypatch) -> None:

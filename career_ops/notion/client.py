@@ -2,6 +2,7 @@ from collections.abc import Mapping
 from typing import Any
 
 import httpx
+
 from career_ops.config import Settings
 
 
