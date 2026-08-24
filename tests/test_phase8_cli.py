@@ -1,8 +1,9 @@
+from typer.testing import CliRunner
+
 from career_ops.cli import app
 from career_ops.config import get_settings
 from career_ops.events.log import EventLog
 from career_ops.models import EventStatus, EventType, NotionMutation
-from typer.testing import CliRunner
 
 
 def test_phase8_cli_acceptance_commands_run_in_safe_modes(tmp_path, monkeypatch) -> None:

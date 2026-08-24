@@ -17,6 +17,11 @@ Pydantic AI is the intelligence layer.
 `career_ops.ai.pydantic_ai_service.PydanticAIService` owns model calls and
 structured outputs. Callers receive Pydantic models, not raw LLM text.
 
+`career_ops.ai.deterministic.DeterministicAIService` implements the same
+application-facing protocols for local fallback, tests, demo, and benchmarks.
+The live adapter delegates fallback decisions to this service, so deterministic
+rules have one owner and deterministic mode never initializes a model provider.
+
 ## Model Provider Abstraction
 
 The model is configured through `CAREER_FORGE_PYDANTIC_AI_MODEL`, for example:

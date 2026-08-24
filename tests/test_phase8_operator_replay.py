@@ -1,4 +1,5 @@
 import pytest
+
 from career_ops.events.log import EventLog
 from career_ops.models import (
     EventStatus,

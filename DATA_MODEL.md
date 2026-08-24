@@ -42,6 +42,13 @@ written or displayed.
 | `PydanticAIEmailEvaluation` | Structured Pydantic AI email classification |
 | `GmailSyncResult` | Observable Gmail sync run summary |
 | `NotionExecutionResult` | Observable Notion mutation execution summary |
+| `ShowcaseScenario` | Stable prompt and typed reviewer-facing demo result |
+| `ShowcaseReport` | Versioned collection of deterministic showcase scenarios |
+| `BenchmarkCaseResult` | Per-prompt latency, output, success, and failure detail |
+| `BenchmarkReport` | Versioned aggregate success, latency, and throughput metrics |
+
+Showcase and benchmark models are local evidence contracts. They are not Notion
+entities and are never persisted to the career workspace.
 
 ## Email Categories
 

@@ -1,9 +1,10 @@
 import json
 
+from typer.testing import CliRunner
+
 from career_ops.cli import app
 from career_ops.config import Settings
 from career_ops.external_setup import check_external_setup
-from typer.testing import CliRunner
 
 
 def test_external_setup_detects_safe_local_credentials(tmp_path, monkeypatch) -> None:

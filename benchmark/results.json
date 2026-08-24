@@ -1,0 +1,191 @@
+{
+  "schema_version": "1.0",
+  "total_cases": 20,
+  "successful_cases": 20,
+  "success_rate": 1.0,
+  "median_latency_ms": 0.012403,
+  "p95_latency_ms": 0.041251,
+  "throughput_per_second": 62317.91484256938,
+  "results": [
+    {
+      "case_id": "email-interview-invite",
+      "kind": "email",
+      "prompt": "Classify an interview invitation and determine whether human review is needed.",
+      "latency_ms": 0.046719,
+      "success": true,
+      "output": "Interview Invitation",
+      "error": null
+    },
+    {
+      "case_id": "email-rejection",
+      "kind": "email",
+      "prompt": "Classify a hiring-process rejection.",
+      "latency_ms": 0.019148,
+      "success": true,
+      "output": "Rejection",
+      "error": null
+    },
+    {
+      "case_id": "email-application-confirmation",
+      "kind": "email",
+      "prompt": "Classify an application receipt.",
+      "latency_ms": 0.012268,
+      "success": true,
+      "output": "Application Confirmation",
+      "error": null
+    },
+    {
+      "case_id": "email-offer",
+      "kind": "email",
+      "prompt": "Classify an offer message.",
+      "latency_ms": 0.011346,
+      "success": true,
+      "output": "Offer",
+      "error": null
+    },
+    {
+      "case_id": "email-recruiter-follow-up",
+      "kind": "email",
+      "prompt": "Classify a recruiter follow-up.",
+      "latency_ms": 0.009975,
+      "success": true,
+      "output": "Recruiter Follow-Up",
+      "error": null
+    },
+    {
+      "case_id": "email-newsletter",
+      "kind": "email",
+      "prompt": "Classify a job newsletter.",
+      "latency_ms": 0.008532,
+      "success": true,
+      "output": "Newsletter",
+      "error": null
+    },
+    {
+      "case_id": "email-recruiter-outreach",
+      "kind": "email",
+      "prompt": "Classify unsolicited recruiter outreach.",
+      "latency_ms": 0.009444,
+      "success": true,
+      "output": "Recruiter Outreach",
+      "error": null
+    },
+    {
+      "case_id": "email-interview-confirmation",
+      "kind": "email",
+      "prompt": "Classify a confirmed interview.",
+      "latency_ms": 0.009434,
+      "success": true,
+      "output": "Interview Confirmation",
+      "error": null
+    },
+    {
+      "case_id": "email-manual-review",
+      "kind": "email",
+      "prompt": "Classify an ambiguous company message conservatively.",
+      "latency_ms": 0.008162,
+      "success": true,
+      "output": "Company Communication",
+      "error": null
+    },
+    {
+      "case_id": "email-second-interview-invite",
+      "kind": "email",
+      "prompt": "Classify a second interview scheduling request.",
+      "latency_ms": 0.009214,
+      "success": true,
+      "output": "Interview Invitation",
+      "error": null
+    },
+    {
+      "case_id": "opportunity-platform-principal",
+      "kind": "opportunity",
+      "prompt": "Score a remote principal platform role using Python, FastAPI, and Postgres.",
+      "latency_ms": 0.041251,
+      "success": true,
+      "output": "fit_score=99, action=prioritize",
+      "error": null
+    },
+    {
+      "case_id": "opportunity-python-backend",
+      "kind": "opportunity",
+      "prompt": "Score a Python backend role with limited detail.",
+      "latency_ms": 0.02685,
+      "success": true,
+      "output": "fit_score=63, action=review",
+      "error": null
+    },
+    {
+      "case_id": "opportunity-java-only",
+      "kind": "opportunity",
+      "prompt": "Deprioritize a Java-only role.",
+      "latency_ms": 0.016385,
+      "success": true,
+      "output": "fit_score=39, action=deprioritize",
+      "error": null
+    },
+    {
+      "case_id": "opportunity-remote-django",
+      "kind": "opportunity",
+      "prompt": "Review a remote senior Django role.",
+      "latency_ms": 0.014481,
+      "success": true,
+      "output": "fit_score=62, action=review",
+      "error": null
+    },
+    {
+      "case_id": "opportunity-unpaid",
+      "kind": "opportunity",
+      "prompt": "Deprioritize an unpaid Python role.",
+      "latency_ms": 0.013611,
+      "success": true,
+      "output": "fit_score=43, action=deprioritize",
+      "error": null
+    },
+    {
+      "case_id": "opportunity-ai-observability",
+      "kind": "opportunity",
+      "prompt": "Review an AI infrastructure role with distributed systems and observability.",
+      "latency_ms": 0.012538,
+      "success": true,
+      "output": "fit_score=64, action=review",
+      "error": null
+    },
+    {
+      "case_id": "opportunity-api-platform",
+      "kind": "opportunity",
+      "prompt": "Prioritize a remote API platform role.",
+      "latency_ms": 0.014282,
+      "success": true,
+      "output": "fit_score=80, action=prioritize",
+      "error": null
+    },
+    {
+      "case_id": "opportunity-clearance",
+      "kind": "opportunity",
+      "prompt": "Deprioritize a role blocked by a clearance requirement.",
+      "latency_ms": 0.011887,
+      "success": true,
+      "output": "fit_score=49, action=deprioritize",
+      "error": null
+    },
+    {
+      "case_id": "opportunity-onsite-data",
+      "kind": "opportunity",
+      "prompt": "Review an onsite Python and Postgres role.",
+      "latency_ms": 0.012178,
+      "success": true,
+      "output": "fit_score=55, action=review",
+      "error": null
+    },
+    {
+      "case_id": "opportunity-senior-ai-platform",
+      "kind": "opportunity",
+      "prompt": "Prioritize a senior AI platform role.",
+      "latency_ms": 0.01323,
+      "success": true,
+      "output": "fit_score=96, action=prioritize",
+      "error": null
+    }
+  ]
+}

@@ -1,5 +1,22 @@
 # Automations
 
+## Deterministic Showcase Path
+
+```mermaid
+flowchart LR
+    Fixture["Fixed fake inputs"] --> Orchestrator["Workflow Orchestrator"]
+    Orchestrator --> Gmail["Gmail Agent"]
+    Orchestrator --> Jobs["Opportunity Agent"]
+    Gmail --> Rules["Deterministic AI Service"]
+    Jobs --> Rules
+    Jobs --> Materials["Material Builder"]
+    Rules --> Report["Typed demo / benchmark report"]
+```
+
+The showcase path is deliberately side-effect free. It exercises application
+logic and provider selection with static inputs, skips external gateways, and
+does not append to the operator event log. CI uses it as the smoke contract.
+
 ## Gmail to Notion
 
 ```mermaid

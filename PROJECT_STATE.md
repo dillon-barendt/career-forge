@@ -1,5 +1,12 @@
 # Project State
 
+## Public Showcase
+
+CareerForge 0.5.0 includes a credential-free deterministic demo, reproducible
+Docker entrypoint, 20-prompt benchmark, and CI verification surface. These
+assets exercise the real agent and provider boundaries without changing the
+live operator loop or its dry-run safety defaults.
+
 Version: `0.5.0-unreleased`
 Last updated: 2026-07-08
 Status: Phase 8 local operator loop implemented; live provider validation remains manual.

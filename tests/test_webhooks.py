@@ -1,6 +1,8 @@
 from typing import Any
 
 import pytest
+from fastapi.testclient import TestClient
+
 from career_ops.api.app import create_app
 from career_ops.application.webhooks.idempotency import (
     InMemoryWebhookReceiptStore,
@@ -12,7 +14,6 @@ from career_ops.application.webhooks.service import WebhookIngestionService
 from career_ops.config import Settings
 from career_ops.infrastructure.webhooks.logfire import redact_headers
 from career_ops.models.webhooks import WebhookEnvelope, WebhookHandlerResult, WebhookRoute
-from fastapi.testclient import TestClient
 
 
 class RecordingObservability:

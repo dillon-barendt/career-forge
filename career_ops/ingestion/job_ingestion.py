@@ -1,5 +1,4 @@
-from typing import Protocol
-
+from career_ops.ai.contracts import OpportunityEvaluationService
 from career_ops.ai.pydantic_ai_service import (
     OPPORTUNITY_EVALUATOR_PROMPT_VERSION,
     PydanticAIService,
@@ -11,11 +10,6 @@ from career_ops.providers.jobs.base import HttpxJobPageFetcher, JobPageFetcher
 from career_ops.providers.jobs.registry import JobProviderRegistry, default_job_provider_registry
 
 
-class OpportunityEvaluationService(Protocol):
-    def evaluate(self, posting: JobPosting) -> OpportunityEvaluation:
-        """Evaluate a normalized job posting."""
-
-
 class JobIngestionPipeline:
     def __init__(
         self,
@@ -24,9 +18,14 @@ class JobIngestionPipeline:
         evaluator: OpportunityEvaluationService | None = None,
     ) -> None:
         self.providers = providers or default_job_provider_registry()
-        settings = get_settings()
-        self.fetcher = fetcher or HttpxJobPageFetcher(timeout=settings.job_fetch_timeout_seconds)
-        self.evaluator = evaluator or PydanticAIService(model=settings.pydantic_ai_model)
+        if fetcher is None:
+            settings = get_settings()
+            fetcher = HttpxJobPageFetcher(timeout=settings.job_fetch_timeout_seconds)
+        if evaluator is None:
+            settings = get_settings()
+            evaluator = PydanticAIService(model=settings.pydantic_ai_model)
+        self.fetcher = fetcher
+        self.evaluator = evaluator
 
     def ingest_url(self, url: str) -> JobIngestionResult:
         provider = self.providers.find(url)

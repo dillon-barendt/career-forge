@@ -1,4 +1,7 @@
 import pytest
+from pydantic import ValidationError
+from typer.testing import CliRunner
+
 from career_ops.cli import app
 from career_ops.opportunities.lifecycle import (
     ACTIVE_PIPELINE_STATES,
@@ -10,8 +13,6 @@ from career_ops.opportunities.lifecycle import (
     filter_active_pipeline,
     transition_opportunity,
 )
-from pydantic import ValidationError
-from typer.testing import CliRunner
 
 
 def test_opportunity_record_defines_required_fields() -> None:

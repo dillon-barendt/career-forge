@@ -2,10 +2,14 @@
 
 All notable changes to Career Forge are tracked here.
 
-## 0.5.0 - Unreleased
+## 0.5.0 - 2026-08-24
 
 ### Added
 
+- Credential-free three-scenario agent demo, Docker image, and 34-second terminal GIF.
+- First-class deterministic AI service behind shared classification and evaluation protocols.
+- Reproducible 20-prompt benchmark with median, p95, throughput, success-rate, and JSON output.
+- CI gates for Ruff formatting, scoped Pyright, 80% core coverage, smoke demo, benchmark artifact, and Docker.
 - `career-forge setup validate` for typed local operator configuration checks
   with secret redaction and suggested fixes.
 - Replayable Notion mutation inspection and dry-run apply commands:
@@ -23,6 +27,9 @@ All notable changes to Career Forge are tracked here.
 
 ### Changed
 
+- Repositioned the public project as “CareerForge — AI agents that forge career data into action.”
+- Pydantic AI fallback now delegates to the explicit deterministic service instead of duplicating rules.
+- Removed the unused duplicate heuristic classifier from the Gmail pipeline.
 - Broad Gmail dry-runs no longer acknowledge messages, advance checkpoints, or
   mark local state as processed.
 - Notion planned events now include serialized mutation payloads for replay.

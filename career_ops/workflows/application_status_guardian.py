@@ -3,9 +3,10 @@ from datetime import date
 from pathlib import Path
 from typing import Literal
 
+from pydantic import BaseModel, Field
+
 from career_ops.models import EventType, WorkflowEvent
 from career_ops.notion.schemas import ApplicationStatus
-from pydantic import BaseModel, Field
 
 FindingKind = Literal["stale_application", "missing_data", "status_conflict"]
 FindingSeverity = Literal["warning", "review_required"]
