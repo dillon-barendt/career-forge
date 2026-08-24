@@ -7,12 +7,19 @@ from benchmark.bench import (
     EmailBenchmarkCase,
     load_cases,
     nearest_rank_p95,
+    render_human,
     run_benchmark,
     write_report,
 )
 
-from career_ops.ai.deterministic import DeterministicAIService
-from career_ops.models import EmailCategory, EmailMessage
+from career_ops.ai.mock import MockAIService
+from career_ops.models import (
+    EmailCategory,
+    EmailMessage,
+    JobPosting,
+    OpportunityEvaluation,
+    PydanticAIEmailEvaluation,
+)
 
 
 class FakeClock:
@@ -55,7 +62,7 @@ def test_nearest_rank_p95_uses_observed_latency() -> None:
     assert nearest_rank_p95([1.0, 2.0, 10.0]) == 10.0
 
 
-def test_benchmark_reports_latency_throughput_and_success_rate() -> None:
+def test_benchmark_reports_required_metrics_and_success_details() -> None:
     cases = [
         _email_case("case-1", EmailCategory.INTERVIEW_INVITATION),
         _email_case("case-2", EmailCategory.REJECTION),
@@ -64,18 +71,18 @@ def test_benchmark_reports_latency_throughput_and_success_rate() -> None:
 
     report = run_benchmark(
         cases,
-        service=DeterministicAIService(),
+        service=MockAIService(),
         clock=FakeClock([0.0, 0.001, 0.001, 0.003, 0.003, 0.013]),
     )
 
-    assert report.total_cases == 3
-    assert report.successful_cases == 2
+    assert report.n == 3
     assert report.success_rate == 2 / 3
-    assert report.median_latency_ms == 2.0
-    assert report.p95_latency_ms == 10.0
-    assert report.throughput_per_second == 3 / 0.013
-    assert report.results[1].success is False
-    assert report.results[1].error == ("expected Rejection, received Interview Invitation")
+    assert report.median_ms == 2.0
+    assert report.p95_ms == 10.0
+    assert report.throughput_per_min == 3 / 0.013 * 60
+    assert report.details[1].prompt_id == "case-2"
+    assert report.details[1].success is False
+    assert report.details[1].error == "expected Rejection, received Interview Invitation"
 
 
 def test_default_benchmark_has_exactly_twenty_prompts() -> None:
@@ -102,10 +109,10 @@ def test_email_benchmark_executes_declared_prompt() -> None:
         expected_classification=EmailCategory.INTERVIEW_INVITATION,
     )
 
-    report = run_benchmark([case], service=DeterministicAIService())
+    report = run_benchmark([case], service=MockAIService())
 
     assert report.success_rate == 1.0
-    assert report.results[0].prompt == case.prompt
+    assert report.details[0].success is True
 
 
 def test_benchmark_stops_clock_before_expectation_validation(
@@ -122,17 +129,58 @@ def test_benchmark_stops_clock_before_expectation_validation(
 
     report = run_benchmark(
         [_email_case("case-1", EmailCategory.INTERVIEW_INVITATION)],
-        service=DeterministicAIService(),
+        service=MockAIService(),
         clock=clock,
     )
 
-    assert report.results[0].latency_ms == 0.0
+    assert report.details[0].latency_ms == 0.0
+
+
+def test_benchmark_excludes_prompt_preparation_from_measured_latency() -> None:
+    clock = MutableClock()
+
+    class TimedEmailMessage(EmailMessage):
+        def model_copy(
+            self,
+            *,
+            update: dict[str, object] | None = None,
+            deep: bool = False,
+        ) -> "TimedEmailMessage":
+            clock.advance(1.0)
+            return super().model_copy(update=update, deep=deep)
+
+    class TimedService:
+        def classify_email(self, message: EmailMessage) -> PydanticAIEmailEvaluation:
+            clock.advance(0.005)
+            return MockAIService().classify_email(message)
+
+        def evaluate(self, posting: JobPosting) -> OpportunityEvaluation:
+            raise AssertionError("opportunity evaluation is not used by this case")
+
+    case = EmailBenchmarkCase(
+        id="preparation-timing",
+        prompt="Classify this interview invitation.",
+        message=TimedEmailMessage(
+            message_id="preparation-timing",
+            thread_id="thread-preparation-timing",
+            sender="Recruiter <recruiter@acme.com>",
+            recipients=["candidate@example.com"],
+            subject="Interview invitation",
+            body="Please send availability to schedule the interview.",
+            received_at="2026-08-24T12:00:00Z",
+        ),
+        expected_classification=EmailCategory.INTERVIEW_INVITATION,
+    )
+
+    report = run_benchmark([case], service=TimedService(), clock=clock)
+
+    assert report.details[0].latency_ms == 5.0
 
 
 def test_benchmark_report_writes_machine_readable_json(tmp_path) -> None:
     report = run_benchmark(
         [_email_case("case-1", EmailCategory.INTERVIEW_INVITATION)],
-        service=DeterministicAIService(),
+        service=MockAIService(),
         clock=FakeClock([0.0, 0.002]),
     )
     output = tmp_path / "results.json"
@@ -140,6 +188,34 @@ def test_benchmark_report_writes_machine_readable_json(tmp_path) -> None:
     write_report(report, output)
 
     payload = json.loads(output.read_text())
-    assert payload["schema_version"] == "1.0"
-    assert payload["total_cases"] == 1
-    assert payload["results"][0]["case_id"] == "case-1"
+    assert set(payload) == {
+        "n",
+        "median_ms",
+        "p95_ms",
+        "throughput_per_min",
+        "success_rate",
+        "details",
+    }
+    assert payload["n"] == 1
+    assert set(payload["details"][0]) == {
+        "prompt_id",
+        "latency_ms",
+        "success",
+        "error",
+    }
+
+
+def test_human_output_reports_required_metrics_in_prompts_per_minute() -> None:
+    report = run_benchmark(
+        [_email_case("case-1", EmailCategory.INTERVIEW_INVITATION)],
+        service=MockAIService(),
+        clock=FakeClock([0.0, 0.002]),
+    )
+
+    output = render_human(report)
+
+    assert "n:            1" in output
+    assert "success rate: 100.0%" in output
+    assert "median:       2.000 ms" in output
+    assert "p95:          2.000 ms" in output
+    assert "prompts/min" in output

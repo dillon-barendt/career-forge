@@ -124,6 +124,8 @@ class SingleMessageWriteControl:
             "confidence": plan.classification.confidence,
             "requires_human_review": plan.classification.requires_human_review,
             "prompt_version": plan.classification.prompt_version,
+            "model_name": plan.classification.model_name,
+            "fallback_status": plan.classification.fallback_status,
             "single_message_control": True,
         }
         self.event_log.append(

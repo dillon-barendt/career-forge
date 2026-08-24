@@ -18,3 +18,11 @@ class OpportunityEvaluationService(Protocol):
     """Evaluates normalized job postings without owning provider I/O."""
 
     def evaluate(self, posting: JobPosting) -> OpportunityEvaluation: ...
+
+
+class CareerAIService(
+    EmailClassificationService,
+    OpportunityEvaluationService,
+    Protocol,
+):
+    """Supports every typed AI decision required by career workflows."""

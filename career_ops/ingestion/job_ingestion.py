@@ -1,8 +1,6 @@
 from career_ops.ai.contracts import OpportunityEvaluationService
-from career_ops.ai.pydantic_ai_service import (
-    OPPORTUNITY_EVALUATOR_PROMPT_VERSION,
-    PydanticAIService,
-)
+from career_ops.ai.factory import build_ai_service
+from career_ops.ai.prompts import OPPORTUNITY_EVALUATOR_PROMPT_VERSION
 from career_ops.config import get_settings
 from career_ops.models import JobIngestionResult, JobPosting, OpportunityEvaluation
 from career_ops.notion.schemas import JobOpportunity
@@ -11,6 +9,8 @@ from career_ops.providers.jobs.registry import JobProviderRegistry, default_job_
 
 
 class JobIngestionPipeline:
+    """Extracts and evaluates job URLs through injected provider boundaries."""
+
     def __init__(
         self,
         providers: JobProviderRegistry | None = None,
@@ -22,8 +22,7 @@ class JobIngestionPipeline:
             settings = get_settings()
             fetcher = HttpxJobPageFetcher(timeout=settings.job_fetch_timeout_seconds)
         if evaluator is None:
-            settings = get_settings()
-            evaluator = PydanticAIService(model=settings.pydantic_ai_model)
+            evaluator = build_ai_service()
         self.fetcher = fetcher
         self.evaluator = evaluator
 

@@ -8,10 +8,8 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from career_ops.ai.pydantic_ai_service import (
-    OPPORTUNITY_EVALUATOR_PROMPT_VERSION,
-    PydanticAIService,
-)
+from career_ops.ai.factory import build_ai_service, build_ai_service_with_metadata
+from career_ops.ai.prompts import OPPORTUNITY_EVALUATOR_PROMPT_VERSION
 from career_ops.analytics.feedback_loop import FeedbackLoopReport, build_feedback_loop_report
 from career_ops.analytics.weekly import generate_weekly_analytics
 from career_ops.cache import LocalCache
@@ -194,10 +192,7 @@ def ingest_url(url: Annotated[str, typer.Argument()]) -> None:
     settings = get_settings()
     observability = _observability()
     result = JobIngestionPipeline(
-        evaluator=PydanticAIService(
-            model=settings.pydantic_ai_model,
-            observability=observability,
-        )
+        evaluator=build_ai_service(settings, observability=observability)
     ).ingest_url(url)
     EventLog(settings.event_log_path).append(
         event_type=EventType.AI_EVALUATION_COMPLETED,
@@ -397,10 +392,7 @@ def evaluate(opportunity_id: Annotated[str, typer.Argument()]) -> None:
         description=opportunity_id,
         apply_url="https://example.com/manual-review",
     )
-    result = PydanticAIService(
-        model=settings.pydantic_ai_model,
-        observability=observability,
-    ).evaluate(posting)
+    result = build_ai_service(settings, observability=observability).evaluate(posting)
     EventLog(settings.event_log_path).append(
         event_type=EventType.AI_EVALUATION_COMPLETED,
         source="manual",
@@ -561,7 +553,12 @@ def run_evals(
 
     settings = get_settings()
     observability = _observability() if emit_logfire else None
-    summaries = LogfireEvalRunner(observability=observability).run_all()
+    build_result = build_ai_service_with_metadata(settings, observability=observability)
+    summaries = LogfireEvalRunner(
+        ai_service=build_result.service,
+        model_route=build_result.model_route,
+        observability=observability,
+    ).run_all()
 
     event_log = EventLog(settings.event_log_path)
     table = Table(title="Career Forge Evals")

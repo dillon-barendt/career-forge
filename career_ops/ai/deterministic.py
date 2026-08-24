@@ -1,4 +1,4 @@
-from career_ops.ai.pydantic_ai_service import EMAIL_CLASSIFIER_PROMPT_VERSION
+from career_ops.ai.prompts import EMAIL_CLASSIFIER_PROMPT_VERSION
 from career_ops.models import (
     EmailCategory,
     EmailMessage,

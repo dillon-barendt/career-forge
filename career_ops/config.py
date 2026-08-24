@@ -4,6 +4,15 @@ from pathlib import Path
 from pydantic import AliasChoices, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from career_ops.compat import StrEnum
+
+
+class RuntimeMode(StrEnum):
+    """Selects deterministic mock execution or configured real-provider execution."""
+
+    MOCK = "mock"
+    REAL = "real"
+
 
 def env_alias(name: str) -> AliasChoices:
     return AliasChoices(f"CAREER_FORGE_{name}", f"CAREER_OPS_{name}")
@@ -12,6 +21,7 @@ def env_alias(name: str) -> AliasChoices:
 class Settings(BaseSettings):
     """Runtime configuration loaded from environment variables or .env."""
 
+    mode: RuntimeMode = Field(default=RuntimeMode.MOCK, validation_alias=env_alias("MODE"))
     notion_token: SecretStr | None = Field(default=None, validation_alias=env_alias("NOTION_TOKEN"))
     notion_version: str = Field(default="2022-06-28", validation_alias=env_alias("NOTION_VERSION"))
     opportunities_database_id: str | None = Field(

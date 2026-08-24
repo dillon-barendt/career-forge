@@ -1,17 +1,20 @@
 import json
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from pydantic_evals import Case, Dataset
 from pydantic_evals.evaluators import Evaluator, EvaluatorContext
 
-from career_ops.ai.pydantic_ai_service import (
+from career_ops.ai.contracts import CareerAIService
+from career_ops.ai.factory import build_ai_service_with_metadata
+from career_ops.ai.prompts import (
     EMAIL_CLASSIFIER_PROMPT_VERSION,
     OPPORTUNITY_EVALUATOR_PROMPT_VERSION,
-    PydanticAIService,
 )
+from career_ops.compat import UTC
+from career_ops.config import get_settings
 from career_ops.models import EmailMessage, JobPosting
 from career_ops.observability import Observability
 
@@ -49,18 +52,27 @@ class ExpectedFields(Evaluator[dict[str, Any], dict[str, Any], dict[str, Any]]):
 
 
 class LogfireEvalRunner:
+    """Runs typed eval datasets through a provider-agnostic AI service."""
+
     def __init__(
         self,
         *,
         evals_dir: Path = Path("evals"),
-        ai_service: PydanticAIService | None = None,
+        ai_service: CareerAIService | None = None,
+        model_route: str | None = None,
         observability: Observability | None = None,
     ) -> None:
         self.evals_dir = evals_dir
-        self.ai_service = ai_service or PydanticAIService(
-            allow_local_fallback=True,
-            observability=observability,
-        )
+        if ai_service is None:
+            settings = get_settings()
+            build_result = build_ai_service_with_metadata(
+                settings,
+                observability=observability,
+            )
+            ai_service = build_result.service
+            model_route = model_route or build_result.model_route
+        self.ai_service = ai_service
+        self.model_route = model_route or "injected"
         self.observability = observability
 
     def run_all(self) -> list[EvalRunSummary]:
@@ -141,7 +153,7 @@ class LogfireEvalRunner:
             description=inputs["description"],
             apply_url="https://example.com/eval",
         )
-        result = self.ai_service.evaluate_opportunity(posting)
+        result = self.ai_service.evaluate(posting)
         return {
             "fit_score": result.fit_score,
             "confidence_score": result.confidence_score,
@@ -167,7 +179,7 @@ class LogfireEvalRunner:
         summary = EvalRunSummary(
             dataset_name=dataset_name,
             prompt_version=prompt_version,
-            model_route=self.ai_service.model,
+            model_route=self.model_route,
             cases=len(cases),
             passed=passed,
             failed=len(cases) - passed,

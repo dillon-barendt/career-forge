@@ -54,6 +54,16 @@ not acknowledge or checkpoint messages.
 
 Prompt versions live in `prompts/phase3/`. Eval datasets live in `evals/`.
 
+`career_ops.ai.factory.build_ai_service()` is the only runtime construction
+boundary for the Gmail and job-ingestion pipelines. `CAREER_FORGE_MODE=mock`
+selects the credential-free `MockAIService` by default;
+`CAREER_FORGE_MODE=real` selects the configured `PydanticAIService` only after
+required credentials validate.
+
+`career_ops.ai.prompts` is the prompt-codec boundary. It owns versioned JSON
+builders and typed output parsers so agents never handle raw provider text or
+provider-specific prompt mechanics.
+
 ## Deterministic Showcase
 
 `DeterministicAIService` implements the same email-classification and
@@ -65,12 +75,17 @@ versioned local rules used by fallback, tests, the public demo, and the
 Agent, Workflow Orchestrator, job-provider registry, and material builder. It
 never reads credentials, makes network calls, or writes external state.
 
+The supported runtime range is Python 3.10–3.12. CI exercises every supported
+minor version with `CAREER_FORGE_MODE=mock`; its Python 3.12 quality and Docker
+smoke gates remain credential-free.
+
 ## Failure Handling
 
 - Provider unsupported: return `needs_human_review=True`.
 - Gmail confidence below threshold: send to Manual Review queue.
 - Notion API unavailable: keep local mutation plan and retry later.
 - Duplicate source event: skip writes using the event dedupe key.
-- Missing credentials: run in dry-run/planning mode.
+- Missing credentials: use mock mode for credential-free planning; real mode
+  fails validation before model construction.
 - Failed Notion mutations: append `notion.mutation.failed` with replay
   eligibility instead of editing old events.

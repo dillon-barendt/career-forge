@@ -1,3 +1,7 @@
+import pytest
+
+from career_ops.ai.deterministic import DeterministicAIService
+from career_ops.ai.mock import MockAIService
 from career_ops.automation.gmail_ingestion import GmailIngestionPipeline
 from career_ops.models import EmailCategory, EmailMessage
 
@@ -46,3 +50,31 @@ def test_newsletter_is_ignored_without_notion_mutations() -> None:
     assert plan.should_mutate_notion is False
     assert plan.company is None
     assert plan.follow_up is None
+
+
+def test_default_pipeline_uses_configured_mock_service() -> None:
+    pipeline = GmailIngestionPipeline()
+
+    assert isinstance(pipeline.ai_service, MockAIService)
+
+
+def test_pipeline_preserves_an_explicit_falsey_service(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail_if_factory_is_called():
+        raise AssertionError("injected Gmail pipeline loaded the AI factory")
+
+    monkeypatch.setattr(
+        "career_ops.automation.gmail_ingestion.build_ai_service",
+        fail_if_factory_is_called,
+    )
+
+    class FalseyDeterministicService(DeterministicAIService):
+        def __bool__(self) -> bool:
+            return False
+
+    service = FalseyDeterministicService()
+
+    pipeline = GmailIngestionPipeline(ai_service=service)
+
+    assert pipeline.ai_service is service

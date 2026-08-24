@@ -1,10 +1,20 @@
-import json
 import os
 from collections.abc import Iterator
 from contextlib import nullcontext
+from dataclasses import dataclass, replace
 from typing import Any, Protocol
 
-from career_ops.config import get_settings
+from pydantic import SecretStr
+
+from career_ops.ai.prompts import (
+    EMAIL_CLASSIFIER_PROMPT_VERSION,
+    OPPORTUNITY_EVALUATOR_PROMPT_VERSION,
+    build_email_classifier_prompt,
+    build_opportunity_evaluator_prompt,
+    parse_email_classifier_output,
+    parse_opportunity_evaluator_output,
+)
+from career_ops.config import Settings, get_settings
 from career_ops.models import (
     EmailMessage,
     JobPosting,
@@ -13,13 +23,35 @@ from career_ops.models import (
 )
 from career_ops.observability import Observability
 
-EMAIL_CLASSIFIER_PROMPT_VERSION = "email-classifier-v1"
-OPPORTUNITY_EVALUATOR_PROMPT_VERSION = "opportunity-evaluator-v1"
-
 
 class AgentRunner(Protocol):
     def run_sync(self, prompt: str) -> Any:
         """Run a Pydantic AI agent and return an object with `.output`."""
+
+
+@dataclass(frozen=True)
+class PydanticAIProviderConfiguration:
+    """Carries one resolved live-provider configuration without global rereads."""
+
+    model: str
+    openai_api_key: str | None
+    gateway_enabled: bool
+    gateway_api_key: str | None
+    gateway_provider: str
+    gateway_route: str | None
+
+    @classmethod
+    def from_settings(cls, settings: Settings) -> "PydanticAIProviderConfiguration":
+        """Resolve provider values and normalize blank secrets from explicit settings."""
+
+        return cls(
+            model=settings.pydantic_ai_model,
+            openai_api_key=_secret_value(settings.openai_api_key),
+            gateway_enabled=settings.pydantic_ai_gateway_enabled,
+            gateway_api_key=_secret_value(settings.pydantic_ai_gateway_api_key),
+            gateway_provider=settings.pydantic_ai_gateway_provider,
+            gateway_route=settings.pydantic_ai_gateway_route,
+        )
 
 
 class PydanticAIService:
@@ -28,13 +60,22 @@ class PydanticAIService:
     def __init__(
         self,
         *,
-        model: str = "openai:gpt-5.2",
+        model: str | None = None,
+        provider_config: PydanticAIProviderConfiguration | None = None,
         email_agent: AgentRunner | None = None,
         opportunity_agent: AgentRunner | None = None,
         allow_local_fallback: bool = True,
         observability: Observability | None = None,
     ) -> None:
-        self.model = model
+        if provider_config is not None and model is not None:
+            raise ValueError("Pass either provider_config or model, not both.")
+        resolved_config = provider_config or PydanticAIProviderConfiguration.from_settings(
+            get_settings()
+        )
+        if model is not None:
+            resolved_config = replace(resolved_config, model=model)
+        self.provider_config = resolved_config
+        self.model = resolved_config.model
         self.email_agent = email_agent
         self.opportunity_agent = opportunity_agent
         self.allow_local_fallback = allow_local_fallback
@@ -65,7 +106,7 @@ class PydanticAIService:
                 return result
 
             try:
-                result = agent.run_sync(self._email_prompt(message))
+                result = agent.run_sync(build_email_classifier_prompt(message))
             except Exception:
                 if self.allow_local_fallback:
                     fallback = self._fallback_email_classification(message)
@@ -77,9 +118,7 @@ class PydanticAIService:
                     return fallback
                 raise
             try:
-                output = result.output
-                if not isinstance(output, PydanticAIEmailEvaluation):
-                    output = PydanticAIEmailEvaluation.model_validate(output)
+                output = parse_email_classifier_output(result.output)
             except Exception:
                 if self.allow_local_fallback:
                     fallback = self._fallback_email_classification(message)
@@ -125,7 +164,7 @@ class PydanticAIService:
                 return result
 
             try:
-                result = agent.run_sync(self._opportunity_prompt(posting))
+                result = agent.run_sync(build_opportunity_evaluator_prompt(posting))
             except Exception:
                 if self.allow_local_fallback:
                     fallback = self._fallback_opportunity_evaluation(posting)
@@ -136,11 +175,7 @@ class PydanticAIService:
                     )
                     return fallback
                 raise
-            output = result.output
-            if isinstance(output, OpportunityEvaluation):
-                evaluation = output
-            else:
-                evaluation = OpportunityEvaluation.model_validate(output)
+            evaluation = parse_opportunity_evaluator_output(result.output)
             self._record_ai_result("opportunity_evaluator", evaluation.confidence_score)
             return evaluation
 
@@ -175,31 +210,18 @@ class PydanticAIService:
             raise
 
     def _ensure_provider_environment(self) -> None:
-        settings = get_settings()
         if self._gateway_enabled():
-            if os.getenv("PYDANTIC_AI_GATEWAY_API_KEY"):
-                return
-            if settings.pydantic_ai_gateway_api_key is not None:
-                os.environ["PYDANTIC_AI_GATEWAY_API_KEY"] = (
-                    settings.pydantic_ai_gateway_api_key.get_secret_value()
-                )
+            if self.provider_config.gateway_api_key is not None:
+                os.environ["PYDANTIC_AI_GATEWAY_API_KEY"] = self.provider_config.gateway_api_key
             return
 
-        if not self.model.startswith("openai:") or os.getenv("OPENAI_API_KEY"):
+        if not self.model.startswith("openai:"):
             return
-        if settings.openai_api_key is not None:
-            os.environ["OPENAI_API_KEY"] = settings.openai_api_key.get_secret_value()
+        if self.provider_config.openai_api_key is not None:
+            os.environ["OPENAI_API_KEY"] = self.provider_config.openai_api_key
 
     def _gateway_enabled(self) -> bool:
-        settings = get_settings()
-        enabled = settings.pydantic_ai_gateway_enabled
-        if self.observability is not None:
-            return self.observability.resolve_bool(
-                "career_forge.ai.gateway_enabled",
-                enabled,
-                targeting_key="career-forge",
-            )
-        return enabled
+        return self.provider_config.gateway_enabled
 
     def _agent_model_name(self) -> str:
         model = self.model
@@ -208,41 +230,20 @@ class PydanticAIService:
         return f"gateway/openai:{model.split(':', 1)[1]}"
 
     def _agent_model(self) -> object:
-        settings = get_settings()
         if (
             self._gateway_enabled()
-            and settings.pydantic_ai_gateway_route
+            and self.provider_config.gateway_route
             and self.model.startswith("openai:")
         ):
             from pydantic_ai.models.openai import OpenAIChatModel
             from pydantic_ai.providers.gateway import gateway_provider
 
             provider = gateway_provider(
-                settings.pydantic_ai_gateway_provider,
-                route=settings.pydantic_ai_gateway_route,
+                self.provider_config.gateway_provider,
+                route=self.provider_config.gateway_route,
             )
             return OpenAIChatModel(self.model.split(":", 1)[1], provider=provider)
         return self._agent_model_name()
-
-    def _email_prompt(self, message: EmailMessage) -> str:
-        payload = {
-            "prompt_version": EMAIL_CLASSIFIER_PROMPT_VERSION,
-            "message_id": message.message_id,
-            "thread_id": message.thread_id,
-            "sender": message.sender,
-            "recipients": message.recipients,
-            "subject": message.subject,
-            "body": message.body,
-            "received_at": message.received_at.isoformat(),
-        }
-        return json.dumps(payload, indent=2, sort_keys=True)
-
-    def _opportunity_prompt(self, posting: JobPosting) -> str:
-        payload = {
-            "prompt_version": OPPORTUNITY_EVALUATOR_PROMPT_VERSION,
-            "posting": posting.model_dump(mode="json"),
-        }
-        return json.dumps(payload, indent=2, sort_keys=True)
 
     def _fallback_email_classification(self, message: EmailMessage) -> PydanticAIEmailEvaluation:
         from career_ops.ai.deterministic import DeterministicAIService
@@ -304,3 +305,12 @@ OPPORTUNITY_EVALUATOR_INSTRUCTIONS = """
 Evaluate a software engineering job opportunity for fit, priority, application
 material guidance, and interview preparation. Return only the structured output.
 """
+
+
+def _secret_value(secret: SecretStr | None) -> str | None:
+    """Return a stripped configured secret value or None when it is blank."""
+
+    if secret is None:
+        return None
+    stripped = secret.get_secret_value().strip()
+    return stripped or None

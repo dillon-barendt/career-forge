@@ -1,8 +1,8 @@
-from datetime import UTC, date, datetime
-from enum import StrEnum
+from datetime import date, datetime
 
 from pydantic import BaseModel, Field, HttpUrl
 
+from career_ops.compat import UTC, StrEnum
 from career_ops.notion.schemas import Application, Company, Contact, JobOpportunity
 
 
@@ -38,6 +38,9 @@ class EventType(StrEnum):
     GMAIL_MESSAGE_SKIPPED = "gmail.message.skipped"
     GMAIL_MESSAGE_CLASSIFIED = "gmail.message.classified"
     GMAIL_MESSAGE_CLASSIFICATION_FAILED = "gmail.message.classification_failed"
+    GMAIL_MESSAGE_PROCESSING_FAILED = "gmail.message.processing_failed"
+    GMAIL_MESSAGE_ACKNOWLEDGEMENT_FAILED = "gmail.message.acknowledgement_failed"
+    GMAIL_MESSAGE_FINALIZATION_FAILED = "gmail.message.finalization_failed"
     GMAIL_MESSAGE_RECEIVED = "gmail.message.received"
     EMAIL_CLASSIFIED = "email.classified"
     COMPANY_UPSERTED = "company.upserted"
@@ -104,11 +107,15 @@ class EmailMessage(BaseModel):
 
 
 class EmailClassification(BaseModel):
+    """Carries a typed email decision and its prompt/provider provenance."""
+
     category: EmailCategory
     confidence: float = Field(ge=0, le=1)
     reasons: list[str] = Field(default_factory=list)
     requires_human_review: bool = False
     prompt_version: str = "email-classifier-v1"
+    model_name: str = "unknown"
+    fallback_status: str = "none"
 
 
 class ClassifiedGmailMessage(BaseModel):
@@ -135,9 +142,9 @@ class ClassifiedGmailMessage(BaseModel):
         *,
         message: "EmailMessage",
         plan: "GmailIngestionPlan",
-        model_name: str,
-        fallback_status: str,
     ) -> "ClassifiedGmailMessage":
+        """Create an operator record using the plan's authoritative metadata."""
+
         opportunity_fields: dict[str, object] = {}
         if plan.opportunity is not None:
             opportunity_fields = {
@@ -170,8 +177,8 @@ class ClassifiedGmailMessage(BaseModel):
             recommended_notion_intent="upsert" if plan.should_mutate_notion else "none",
             low_confidence=plan.classification.requires_human_review,
             prompt_version=plan.classification.prompt_version,
-            model_name=model_name,
-            fallback_status=fallback_status,
+            model_name=plan.classification.model_name,
+            fallback_status=plan.classification.fallback_status,
         )
 
 

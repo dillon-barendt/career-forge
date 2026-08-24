@@ -1,3 +1,7 @@
+import pytest
+
+from career_ops.ai.deterministic import DeterministicAIService
+from career_ops.ai.mock import MockAIService
 from career_ops.ingestion.job_ingestion import JobIngestionPipeline
 from career_ops.providers.jobs.base import StaticJobPageFetcher
 from career_ops.providers.jobs.registry import default_job_provider_registry
@@ -47,3 +51,33 @@ def test_unsupported_job_url_returns_human_review_result() -> None:
     assert result.needs_human_review is True
     assert result.provider_name == "unsupported"
     assert "Unsupported job URL" in result.evaluation.potential_concerns
+
+
+def test_default_evaluator_uses_configured_mock_service() -> None:
+    pipeline = JobIngestionPipeline(fetcher=StaticJobPageFetcher({}))
+
+    assert isinstance(pipeline.evaluator, MockAIService)
+
+
+def test_fully_injected_pipeline_does_not_load_settings(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail_if_settings_are_loaded() -> None:
+        raise AssertionError("fully injected job pipeline loaded settings")
+
+    monkeypatch.setattr(
+        "career_ops.ingestion.job_ingestion.get_settings",
+        fail_if_settings_are_loaded,
+    )
+    monkeypatch.setattr(
+        "career_ops.ingestion.job_ingestion.build_ai_service",
+        fail_if_settings_are_loaded,
+    )
+    evaluator = DeterministicAIService()
+
+    pipeline = JobIngestionPipeline(
+        fetcher=StaticJobPageFetcher({}),
+        evaluator=evaluator,
+    )
+
+    assert pipeline.evaluator is evaluator

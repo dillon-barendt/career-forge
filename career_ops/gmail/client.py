@@ -1,9 +1,10 @@
 import base64
-from datetime import UTC, datetime
+from datetime import datetime
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 from typing import Any, Protocol
 
+from career_ops.compat import UTC
 from career_ops.models import EmailMessage
 
 GMAIL_SCOPES = ["https://www.googleapis.com/auth/gmail.modify"]

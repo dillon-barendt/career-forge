@@ -51,7 +51,7 @@ flowchart LR
 | `events/` | Append-only JSONL workflow event log |
 | `operator_loop.py` | Replay-oriented inspection and apply service for planned Notion mutations |
 | `state/` | Local checkpoint and processed-source state |
-| `ai/` | Shared service protocols, deterministic rules, and live Pydantic AI adapter |
+| `ai/` | Service protocols, mock/real factory, prompt codecs, deterministic rules, and live Pydantic AI adapter |
 | `showcase/` | Credential-free orchestration and stable demo output |
 | `benchmark/` | Versioned 20-prompt correctness and latency suite |
 | `analytics/` | Pure analytics functions |
@@ -60,12 +60,75 @@ flowchart LR
 ## AI Service Boundary
 
 `EmailClassificationService` and `OpportunityEvaluationService` are the small
-application-facing contracts. `PydanticAIService` handles live model calls and
-observability. `DeterministicAIService` handles reproducible rules and is the
-explicit fallback dependency; it does not imitate provider I/O.
+application-facing contracts. `career_ops.ai.factory.build_ai_service()` is the
+single configuration boundary used when Gmail and job-ingestion pipelines do
+not receive an injected service. `CAREER_FORGE_MODE=mock` selects
+`MockAIService`; `CAREER_FORGE_MODE=real` validates provider credentials and
+selects `PydanticAIService` with implicit local fallback disabled.
 
-This split removes hidden exception-driven demo behavior while keeping fallback
-outputs compatible with the live service contract.
+`PydanticAIService` handles live model calls and observability.
+`DeterministicAIService` owns reproducible rules behind `MockAIService`; it does
+not imitate provider I/O. Agents and workflows consume typed protocols and
+therefore do not branch on runtime mode.
+
+This split removes hidden exception-driven demo behavior while keeping mock and
+real outputs compatible with the same live service contract.
+
+## Prompt-Codec Boundary
+
+`career_ops.ai.prompts` is isolated from provider construction. Its
+`build_email_classifier_prompt()` and `build_opportunity_evaluator_prompt()`
+functions encode typed inputs as versioned JSON. Its
+`parse_email_classifier_output()` and `parse_opportunity_evaluator_output()`
+functions validate provider output back into Pydantic domain models.
+
+This boundary keeps prompt serialization and response validation independently
+testable, prevents raw model text from leaking into agents, and lets the real
+adapter change provider mechanics without changing application contracts.
+
+## Runtime and Compatibility Contract
+
+CareerForge supports Python 3.10, 3.11, and 3.12. Mock mode is the default and
+requires no credentials:
+
+```bash
+CAREER_FORGE_MODE=mock ./demo.sh --json
+CAREER_FORGE_MODE=mock uv run python benchmark/bench.py
+```
+
+Real mode is an explicit operator decision:
+
+```bash
+CAREER_FORGE_MODE=real \
+CAREER_FORGE_PYDANTIC_AI_MODEL=openai:gpt-5.2 \
+CAREER_FORGE_OPENAI_API_KEY='replace-with-a-secret' \
+uv run career-forge setup validate
+```
+
+Real credentials belong in environment variables or encrypted GitHub Actions
+secrets. Default CI execution is guarded by `CAREER_FORGE_MODE=mock` and never
+receives provider secrets; future live-provider checks must be isolated from
+pull requests and the default CI path.
+
+## Benchmark and CI Evidence
+
+The fixed 20-prompt benchmark publishes exactly these top-level JSON fields:
+`n`, `median_ms`, `p95_ms`, `throughput_per_min`, `success_rate`, and `details`.
+Each `details` record contains exactly `prompt_id`, `latency_ms`, `success`, and
+`error`. The fresh deterministic release measurement is:
+
+| Field | Value |
+| --- | ---: |
+| `n` | 20 |
+| `median_ms` | 0.0144865 |
+| `p95_ms` | 0.048673 |
+| `throughput_per_min` | 2,626,056.166964651 |
+| `success_rate` | 1.0 |
+
+GitHub Actions runs coverage on Python 3.10–3.12 with mock mode explicit. A
+dependent Python 3.12 quality job runs Ruff, formatting, Pyright, the benchmark,
+the host mock demo, and the non-root Docker mock demo, then uploads a fresh
+`benchmark-results.json` artifact.
 
 ## Provider Boundary
 

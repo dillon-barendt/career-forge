@@ -3,7 +3,7 @@
 ### AI agents that forge career data into action.
 
 [![CI](https://github.com/dillon-barendt/career-forge/actions/workflows/ci.yml/badge.svg)](https://github.com/dillon-barendt/career-forge/actions/workflows/ci.yml)
-[![Python 3.12](https://img.shields.io/badge/python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Python 3.10–3.12](https://img.shields.io/badge/python-3.10--3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Pydantic v2](https://img.shields.io/badge/Pydantic-v2-E92063?logo=pydantic&logoColor=white)](https://docs.pydantic.dev/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-34D399.svg)](LICENSE)
 
@@ -18,22 +18,27 @@ materials—while keeping external effects explicit and auditable.
 
 - **See it in one minute:** a deterministic three-agent workflow, no credentials required.
 - **Trust the output:** Pydantic v2 contracts, dependency-injected providers, append-only events, and dry-run-first writes.
-- **Reproduce the evidence:** Docker, 85-test CI, 81%+ core coverage, and a machine-readable 20-prompt benchmark.
+- **Reproduce the evidence:** Python 3.10–3.12 CI, Docker, 80%+ core coverage, and a machine-readable 20-prompt benchmark.
 - **Extend it cleanly:** application logic stays independent from Gmail, Notion, ATS, model, and observability adapters.
+
+The 0.6.0 implementation and host-side local gates are complete. Release
+readiness still awaits the pull-request Actions matrix, benchmark artifact
+upload, and Docker build/non-root smoke results; this branch does not claim
+those remote gates have passed.
 
 ## Run the demo in three commands
 
 ```bash
 git clone https://github.com/dillon-barendt/career-forge.git && cd career-forge
 docker build -t career-forge-demo .
-docker run --rm career-forge-demo
+docker run --rm -e CAREER_FORGE_MODE=mock career-forge-demo
 ```
 
 The demo calls the real orchestrator, Gmail ingestion pipeline, ATS provider
 registry, opportunity evaluator, and material builder with fixed fake inputs.
 It makes **no network calls, requires no secrets, and performs no writes**.
 
-Already have Python 3.12 and [uv](https://docs.astral.sh/uv/)?
+Already have Python 3.10–3.12 and [uv](https://docs.astral.sh/uv/)?
 
 ```bash
 uv sync --extra dev
@@ -93,6 +98,32 @@ Get the same report as stable JSON:
 ./demo.sh --json
 ```
 
+## Mock and real modes
+
+Mock mode is the default. It is deterministic, credential-free, and safe for
+local demos and CI:
+
+```bash
+CAREER_FORGE_MODE=mock ./demo.sh --json
+CAREER_FORGE_MODE=mock uv run python benchmark/bench.py
+```
+
+Real mode is an explicit opt-in. It builds the configured Pydantic AI provider
+and fails before a model call when required credentials are missing:
+
+```bash
+export CAREER_FORGE_MODE=real
+export CAREER_FORGE_PYDANTIC_AI_MODEL=openai:gpt-5.2
+export CAREER_FORGE_OPENAI_API_KEY='replace-with-a-secret'
+uv run career-forge setup validate
+```
+
+`career_ops.ai.factory.build_ai_service()` is the single runtime selection
+boundary used by the Gmail and job-ingestion pipelines. `career_ops.ai.prompts`
+is the prompt-codec boundary: it owns the versioned JSON prompt builders and
+the typed output parsers shared by the real adapter. Application agents depend
+on the typed service protocols, not provider SDKs or raw model text.
+
 ## Benchmark
 
 The versioned suite contains exactly 20 prompts: 10 career-email
@@ -106,12 +137,16 @@ uv run python benchmark/bench.py --output benchmark/results.json
 
 Latest local deterministic run:
 
-| Metric | Result |
+| JSON field | Fresh measured value |
 | --- | ---: |
-| Success rate | 100% (20/20) |
-| Median latency | 0.012 ms |
-| p95 latency | 0.041 ms |
-| Throughput | 62,318 prompts/s |
+| `n` | 20 |
+| `median_ms` | 0.0144865 |
+| `p95_ms` | 0.048673 |
+| `throughput_per_min` | 2,626,056.166964651 |
+| `success_rate` | 1.0 (20/20) |
+
+`details` contains 20 per-prompt records with exactly `prompt_id`,
+`latency_ms`, `success`, and `error`.
 
 Results vary by hardware. The committed [JSON report](benchmark/results.json)
 contains the machine-readable evidence; CI produces a fresh report artifact on
@@ -153,7 +188,8 @@ Read the full [architecture](ARCHITECTURE.md), [data model](DATA_MODEL.md), and
 - append-only workflow events, Logfire metrics, prompt versions, and evals
 - provider-neutral FastAPI webhook intake with verification and dedupe boundaries
 - deterministic demo and 20-prompt benchmark
-- Docker and CI verification for lint, format, typing, tests, coverage, smoke, and benchmark
+- Docker packaging and CI workflows for lint, format, typing, tests, coverage, smoke, and benchmark
+- explicit mock-default runtime selection with fail-fast real-provider credentials
 
 CareerForge is production-shaped but intentionally honest about live readiness:
 Gmail OAuth, Notion schemas, hosted alerting, and reviewed unattended apply
@@ -166,6 +202,7 @@ still require operator validation. See [Project State](PROJECT_STATE.md) and the
 uv sync --extra dev
 cp .env.example .env
 uv run pre-commit install
+export CAREER_FORGE_MODE=real
 uv run career-forge setup validate
 ```
 
@@ -173,6 +210,7 @@ Important live settings:
 
 ```dotenv
 CAREER_FORGE_AI_PROVIDER=pydantic-ai
+CAREER_FORGE_MODE=real
 CAREER_FORGE_PYDANTIC_AI_MODEL=openai:gpt-5.2
 CAREER_FORGE_OPENAI_API_KEY=
 CAREER_FORGE_NOTION_TOKEN=
@@ -181,8 +219,13 @@ CAREER_FORGE_GMAIL_TOKEN_PATH=.career_forge/gmail_token.json
 CAREER_FORGE_LOGFIRE_TOKEN=
 ```
 
-The deterministic showcase does not read these values. Live Gmail and Notion
-commands remain dry-run-first:
+Store real credentials in environment variables locally or encrypted GitHub
+Actions secrets. The default CI jobs set `CAREER_FORGE_MODE=mock`, never expose
+provider secrets, and must remain secret-free; any future real-provider job must
+be separately guarded from pull requests and default CI execution.
+
+The deterministic showcase does not read live-provider values. Live Gmail and
+Notion commands remain dry-run-first:
 
 ```bash
 uv run career-forge ingest-gmail --dry-run
@@ -212,12 +255,18 @@ JSON smoke demo
 20-prompt benchmark
 ```
 
-Docker is verified in GitHub Actions:
+Docker verification is configured as a required GitHub Actions release gate:
 
 ```bash
 docker build -t career-forge-demo .
-docker run --rm career-forge-demo ./demo.sh --json
+docker run --rm -e CAREER_FORGE_MODE=mock career-forge-demo ./demo.sh --json
 ```
+
+The test matrix runs the same coverage gate on Python 3.10, 3.11, and 3.12.
+Only after all three pass does the Python 3.12 quality job run Ruff, Pyright,
+the benchmark, host and container mock smokes, and artifact upload without
+provider credentials. For 0.6.0, those pull-request results and the uploaded
+benchmark artifact remain pending release evidence.
 
 ## Repository guide
 

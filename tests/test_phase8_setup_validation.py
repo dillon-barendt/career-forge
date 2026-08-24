@@ -40,7 +40,7 @@ def test_setup_validation_reports_valid_configuration(tmp_path) -> None:
     assert all(item.status != SetupStatus.ERROR for item in report.items)
 
 
-def test_setup_validation_reports_missing_gmail_notion_and_ai_config(tmp_path, monkeypatch) -> None:
+def test_setup_validation_mock_mode_does_not_require_ai_credentials(tmp_path, monkeypatch) -> None:
     for name in (
         "CAREER_FORGE_NOTION_TOKEN",
         "CAREER_FORGE_OPPORTUNITIES_DATABASE_ID",
@@ -58,6 +58,7 @@ def test_setup_validation_reports_missing_gmail_notion_and_ai_config(tmp_path, m
             event_log_path=tmp_path / "events.jsonl",
             state_path=tmp_path / "state.json",
             gmail_credentials_path=tmp_path / "missing_credentials.json",
+            mode="mock",
             ai_provider="pydantic-ai",
             notion_token=None,
             opportunities_database_id=None,
@@ -73,9 +74,36 @@ def test_setup_validation_reports_missing_gmail_notion_and_ai_config(tmp_path, m
 
     assert by_name["Gmail OAuth credentials"].status == SetupStatus.ERROR
     assert by_name["Notion API"].status == SetupStatus.ERROR
-    assert by_name["AI provider credentials"].status == SetupStatus.ERROR
+    assert by_name["AI provider credentials"].status == SetupStatus.OK
     assert by_name["Gmail OAuth credentials"].env_var == "CAREER_FORGE_GMAIL_CREDENTIALS_PATH"
     assert "Set" in by_name["Notion API"].suggested_fix
+
+
+def test_setup_validation_real_mode_requires_ai_credentials(tmp_path, monkeypatch) -> None:
+    for name in (
+        "CAREER_FORGE_OPENAI_API_KEY",
+        "CAREER_OPS_OPENAI_API_KEY",
+        "OPENAI_API_KEY",
+        "CAREER_FORGE_PYDANTIC_AI_GATEWAY_API_KEY",
+        "PYDANTIC_AI_GATEWAY_API_KEY",
+    ):
+        monkeypatch.delenv(name, raising=False)
+    settings = Settings(
+        _env_file=None,
+        mode="real",
+        ai_provider="deterministic",
+        pydantic_ai_model="openai:gpt-5.2",
+        openai_api_key="   ",
+        pydantic_ai_gateway_api_key=None,
+        event_log_path=tmp_path / "events.jsonl",
+        state_path=tmp_path / "state.json",
+    )
+
+    report = validate_setup(settings)
+    item = next(item for item in report.items if item.name == "AI provider credentials")
+
+    assert item.status == SetupStatus.ERROR
+    assert item.env_var == "CAREER_FORGE_OPENAI_API_KEY"
 
 
 def test_setup_validate_cli_redacts_secret_values(tmp_path, monkeypatch) -> None:

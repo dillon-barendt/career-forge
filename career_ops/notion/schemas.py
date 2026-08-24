@@ -1,7 +1,8 @@
 from datetime import date, datetime
-from enum import StrEnum
 
 from pydantic import BaseModel, Field, HttpUrl
+
+from career_ops.compat import StrEnum
 
 
 class ApplicationStatus(StrEnum):
