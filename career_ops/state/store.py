@@ -1,6 +1,12 @@
 import json
+import os
+import tempfile
 from pathlib import Path
 from typing import Protocol
+
+
+class InvalidStateError(ValueError):
+    """Reports malformed persisted state that cannot be updated safely."""
 
 
 class StateStore(Protocol):
@@ -15,6 +21,16 @@ class StateStore(Protocol):
 
     def mark_processed(self, source: str, source_id: str) -> None:
         """Mark a source event as processed."""
+
+    def finalize_processed(
+        self,
+        source: str,
+        source_id: str,
+        *,
+        checkpoint_key: str,
+        checkpoint_value: str,
+    ) -> None:
+        """Atomically persist processed state and its corresponding checkpoint."""
 
 
 class JsonStateStore:
@@ -50,6 +66,38 @@ class JsonStateStore:
             source_values.append(source_id)
         self._write(data)
 
+    def finalize_processed(
+        self,
+        source: str,
+        source_id: str,
+        *,
+        checkpoint_key: str,
+        checkpoint_value: str,
+    ) -> None:
+        """Persist processed state and checkpoint through one atomic file replacement."""
+
+        data = self._read()
+        if "processed" not in data:
+            data["processed"] = {}
+        processed = data["processed"]
+        if not isinstance(processed, dict):
+            raise InvalidStateError("State processed must be a dictionary.")
+        if source not in processed:
+            processed[source] = []
+        source_values = processed[source]
+        if not isinstance(source_values, list):
+            raise InvalidStateError(f"State processed[{source!r}] must be a list.")
+        if "checkpoints" not in data:
+            data["checkpoints"] = {}
+        checkpoints = data["checkpoints"]
+        if not isinstance(checkpoints, dict):
+            raise InvalidStateError("State checkpoints must be a dictionary.")
+
+        if source_id not in source_values:
+            source_values.append(source_id)
+        checkpoints[checkpoint_key] = checkpoint_value
+        self._write(data)
+
     def _read(self) -> dict[str, object]:
         if not self.path.exists():
             return {"checkpoints": {}, "processed": {}}
@@ -59,6 +107,22 @@ class JsonStateStore:
 
     def _write(self, data: dict[str, object]) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        with self.path.open("w", encoding="utf-8") as handle:
-            json.dump(data, handle, indent=2, sort_keys=True)
-            handle.write("\n")
+        temporary_path: Path | None = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                encoding="utf-8",
+                dir=self.path.parent,
+                prefix=f".{self.path.name}.",
+                delete=False,
+            ) as handle:
+                temporary_path = Path(handle.name)
+                json.dump(data, handle, indent=2, sort_keys=True)
+                handle.write("\n")
+                handle.flush()
+                os.fsync(handle.fileno())
+            temporary_path.replace(self.path)
+        except Exception:
+            if temporary_path is not None:
+                temporary_path.unlink(missing_ok=True)
+            raise

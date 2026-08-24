@@ -221,14 +221,7 @@ class PydanticAIService:
             os.environ["OPENAI_API_KEY"] = self.provider_config.openai_api_key
 
     def _gateway_enabled(self) -> bool:
-        enabled = self.provider_config.gateway_enabled
-        if self.observability is not None:
-            return self.observability.resolve_bool(
-                "career_forge.ai.gateway_enabled",
-                enabled,
-                targeting_key="career-forge",
-            )
-        return enabled
+        return self.provider_config.gateway_enabled
 
     def _agent_model_name(self) -> str:
         model = self.model

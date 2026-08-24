@@ -22,6 +22,10 @@ from career_ops.notion.schemas import (
 )
 
 
+class GmailClassificationError(RuntimeError):
+    """Identifies an AI classification failure before message planning begins."""
+
+
 class GmailIngestionPipeline:
     """Classify Gmail messages and create idempotent Notion mutation plans."""
 
@@ -41,7 +45,10 @@ class GmailIngestionPipeline:
         )
 
     def plan(self, message: EmailMessage) -> GmailIngestionPlan:
-        classification = self.classify(message)
+        try:
+            classification = self.classify(message)
+        except Exception as exc:
+            raise GmailClassificationError(str(exc)) from exc
         dedupe_key = f"gmail:{message.message_id}"
         audit_events = [
             AuditEvent(

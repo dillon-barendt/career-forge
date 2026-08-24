@@ -73,6 +73,25 @@ def test_real_openai_mode_requires_credentials() -> None:
         build_ai_service(settings)
 
 
+@pytest.mark.parametrize(
+    "model",
+    ["", "gpt-5.2", "anthropic:claude-sonnet-4"],
+)
+def test_real_mode_rejects_missing_or_unsupported_provider(model: str) -> None:
+    settings = Settings(
+        _env_file=None,
+        mode="real",
+        pydantic_ai_model=model,
+        openai_api_key="sk-test",
+    )
+
+    with pytest.raises(
+        AIConfigurationError,
+        match="CAREER_FORGE_PYDANTIC_AI_MODEL.*openai:",
+    ):
+        build_ai_service(settings)
+
+
 @pytest.mark.parametrize("openai_api_key", ["", "   "])
 def test_real_openai_mode_rejects_blank_credentials(openai_api_key: str) -> None:
     settings = Settings(

@@ -8,7 +8,7 @@ from pydantic_evals import Case, Dataset
 from pydantic_evals.evaluators import Evaluator, EvaluatorContext
 
 from career_ops.ai.contracts import CareerAIService
-from career_ops.ai.factory import build_ai_service, configured_ai_model_route
+from career_ops.ai.factory import build_ai_service_with_metadata
 from career_ops.ai.prompts import (
     EMAIL_CLASSIFIER_PROMPT_VERSION,
     OPPORTUNITY_EVALUATOR_PROMPT_VERSION,
@@ -65,8 +65,12 @@ class LogfireEvalRunner:
         self.evals_dir = evals_dir
         if ai_service is None:
             settings = get_settings()
-            ai_service = build_ai_service(settings, observability=observability)
-            model_route = model_route or configured_ai_model_route(settings)
+            build_result = build_ai_service_with_metadata(
+                settings,
+                observability=observability,
+            )
+            ai_service = build_result.service
+            model_route = model_route or build_result.model_route
         self.ai_service = ai_service
         self.model_route = model_route or "injected"
         self.observability = observability

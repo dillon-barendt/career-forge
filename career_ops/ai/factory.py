@@ -1,3 +1,5 @@
+from dataclasses import dataclass, replace
+
 from career_ops.ai.contracts import CareerAIService
 from career_ops.ai.mock import MockAIService
 from career_ops.ai.pydantic_ai_service import (
@@ -16,6 +18,14 @@ class AIConfigurationError(RuntimeError):
         self.env_var = env_var
 
 
+@dataclass(frozen=True)
+class AIServiceBuildResult:
+    """Pairs a provider-agnostic service with its effective reporting metadata."""
+
+    service: CareerAIService
+    model_route: str
+
+
 def build_ai_service(
     settings: Settings | None = None,
     *,
@@ -23,23 +33,62 @@ def build_ai_service(
 ) -> CareerAIService:
     """Build the configured AI service after validating real-provider credentials."""
 
+    return build_ai_service_with_metadata(
+        settings,
+        observability=observability,
+    ).service
+
+
+def build_ai_service_with_metadata(
+    settings: Settings | None = None,
+    *,
+    observability: Observability | None = None,
+) -> AIServiceBuildResult:
+    """Build an AI service and report the same effective route it will execute."""
+
     resolved = settings or get_settings()
     if resolved.mode is RuntimeMode.MOCK:
-        return MockAIService()
-    provider_config = resolve_real_provider_configuration(resolved)
-    return PydanticAIService(
-        provider_config=provider_config,
-        allow_local_fallback=False,
+        return AIServiceBuildResult(
+            service=MockAIService(),
+            model_route="mock:deterministic-v1",
+        )
+    provider_config = resolve_real_provider_configuration(
+        resolved,
         observability=observability,
+    )
+    return AIServiceBuildResult(
+        service=PydanticAIService(
+            provider_config=provider_config,
+            allow_local_fallback=False,
+            observability=observability,
+        ),
+        model_route=_provider_model_route(provider_config),
     )
 
 
-def resolve_real_provider_configuration(settings: Settings) -> PydanticAIProviderConfiguration:
+def resolve_real_provider_configuration(
+    settings: Settings,
+    *,
+    observability: Observability | None = None,
+) -> PydanticAIProviderConfiguration:
     """Resolve and validate the live-provider settings shared by setup and runtime."""
 
     config = PydanticAIProviderConfiguration.from_settings(settings)
+    if observability is not None:
+        config = replace(
+            config,
+            gateway_enabled=observability.resolve_bool(
+                "career_forge.ai.gateway_enabled",
+                config.gateway_enabled,
+                targeting_key="career-forge",
+            ),
+        )
     if not config.model.startswith("openai:"):
-        return config
+        env_var = "CAREER_FORGE_PYDANTIC_AI_MODEL"
+        raise AIConfigurationError(
+            f"Real mode requires {env_var} to use the supported openai: provider prefix.",
+            env_var=env_var,
+        )
     if config.gateway_enabled and config.gateway_api_key is None:
         env_var = "CAREER_FORGE_PYDANTIC_AI_GATEWAY_API_KEY"
         raise AIConfigurationError(
@@ -55,12 +104,22 @@ def resolve_real_provider_configuration(settings: Settings) -> PydanticAIProvide
     return config
 
 
-def configured_ai_model_route(settings: Settings) -> str:
+def configured_ai_model_route(
+    settings: Settings,
+    *,
+    observability: Observability | None = None,
+) -> str:
     """Describe configured model routing as provider-agnostic reporting metadata."""
 
     if settings.mode is RuntimeMode.MOCK:
         return "mock:deterministic-v1"
-    config = PydanticAIProviderConfiguration.from_settings(settings)
-    if config.gateway_enabled and config.model.startswith("openai:"):
+    config = resolve_real_provider_configuration(settings, observability=observability)
+    return _provider_model_route(config)
+
+
+def _provider_model_route(config: PydanticAIProviderConfiguration) -> str:
+    """Render provider reporting metadata from an effective validated configuration."""
+
+    if config.gateway_enabled:
         return f"gateway/openai:{config.model.split(':', 1)[1]}"
     return config.model

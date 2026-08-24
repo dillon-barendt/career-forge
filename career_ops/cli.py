@@ -8,7 +8,7 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from career_ops.ai.factory import build_ai_service, configured_ai_model_route
+from career_ops.ai.factory import build_ai_service, build_ai_service_with_metadata
 from career_ops.ai.prompts import OPPORTUNITY_EVALUATOR_PROMPT_VERSION
 from career_ops.analytics.feedback_loop import FeedbackLoopReport, build_feedback_loop_report
 from career_ops.analytics.weekly import generate_weekly_analytics
@@ -553,10 +553,10 @@ def run_evals(
 
     settings = get_settings()
     observability = _observability() if emit_logfire else None
-    ai_service = build_ai_service(settings, observability=observability)
+    build_result = build_ai_service_with_metadata(settings, observability=observability)
     summaries = LogfireEvalRunner(
-        ai_service=ai_service,
-        model_route=configured_ai_model_route(settings),
+        ai_service=build_result.service,
+        model_route=build_result.model_route,
         observability=observability,
     ).run_all()
 
