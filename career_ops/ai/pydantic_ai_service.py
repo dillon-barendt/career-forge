@@ -6,16 +6,12 @@ from typing import Any, Protocol
 
 from career_ops.config import get_settings
 from career_ops.models import (
-    EmailCategory,
     EmailMessage,
     JobPosting,
     OpportunityEvaluation,
     PydanticAIEmailEvaluation,
 )
-from career_ops.notion.schemas import JobOpportunity
 from career_ops.observability import Observability
-from career_ops.scoring.fit_score import score_opportunity
-from career_ops.scoring.rules import normalize_text
 
 EMAIL_CLASSIFIER_PROMPT_VERSION = "email-classifier-v1"
 OPPORTUNITY_EVALUATOR_PROMPT_VERSION = "opportunity-evaluator-v1"
@@ -249,97 +245,20 @@ class PydanticAIService:
         return json.dumps(payload, indent=2, sort_keys=True)
 
     def _fallback_email_classification(self, message: EmailMessage) -> PydanticAIEmailEvaluation:
-        text = normalize_text(f"{message.subject} {message.body} {message.sender}")
-        category = EmailCategory.COMPANY_COMMUNICATION
-        confidence = 0.55
-        reason = "Local dry-run fallback could not confidently classify this message."
+        from career_ops.ai.deterministic import DeterministicAIService
 
-        if "unsubscribe" in text or "newsletter" in text:
-            category = EmailCategory.NEWSLETTER
-            confidence = 0.95
-            reason = "Newsletter signal detected."
-        elif "interview" in text and any(
-            term in text for term in ("invite", "schedule", "availability", "available")
-        ):
-            category = EmailCategory.INTERVIEW_INVITATION
-            confidence = 0.9
-            reason = "Interview scheduling language detected."
-        elif any(term in text for term in ("not moving forward", "unfortunately", "declined")):
-            category = EmailCategory.REJECTION
-            confidence = 0.9
-            reason = "Rejection language detected."
-        elif any(term in text for term in ("application received", "thank you for applying")):
-            category = EmailCategory.APPLICATION_CONFIRMATION
-            confidence = 0.86
-            reason = "Application confirmation language detected."
-        elif "recruiter" in text or "opportunity" in text or "role" in text:
-            category = EmailCategory.RECRUITER_OUTREACH
-            confidence = 0.72
-            reason = "Recruiter or opportunity language detected."
-
-        return PydanticAIEmailEvaluation(
-            classification=category,
-            confidence_score=confidence,
-            executive_summary=f"Email classified as {category.value}.",
-            suggested_next_action="Review or process according to classification.",
-            human_review_required=confidence < 0.65,
-            reasons=[reason],
-            prompt_version=EMAIL_CLASSIFIER_PROMPT_VERSION,
-            model_name=self._agent_model_name(),
-            fallback_status="local_fallback",
+        return (
+            DeterministicAIService()
+            .classify_email(message)
+            .model_copy(
+                update={"model_name": self._agent_model_name(), "fallback_status": "local_fallback"}
+            )
         )
 
     def _fallback_opportunity_evaluation(self, posting: JobPosting) -> OpportunityEvaluation:
-        opportunity = JobOpportunity(
-            title=posting.role,
-            company=posting.company,
-            description=posting.description,
-            location=posting.location,
-            compensation=posting.compensation,
-            source=posting.provider,
-            tags=[*posting.skills, *posting.tech_stack],
-        )
-        fit = score_opportunity(opportunity)
-        confidence = self._posting_confidence(posting)
-        concerns = fit.concerns.copy()
-        if not posting.compensation:
-            concerns.append("Compensation was not detected in the posting.")
-        return OpportunityEvaluation(
-            executive_summary=(
-                f"{posting.role} at {posting.company} scored {fit.score}/100 "
-                "using the local dry-run evaluator."
-            ),
-            fit_score=fit.score,
-            confidence_score=confidence,
-            match_analysis=self._match_analysis(fit.score),
-            strengths=fit.strengths or ["Posting includes enough detail for review."],
-            potential_concerns=concerns,
-            missing_qualifications=[],
-            resume_suggestions=[f"Mirror the target title: {posting.role}."],
-            cover_letter_talking_points=[
-                f"Connect prior software engineering impact to {posting.company}."
-            ],
-            interview_preparation_topics=["Prepare a project walkthrough with tradeoffs."],
-            suggested_next_action=fit.recommended_action,
-        )
+        from career_ops.ai.deterministic import DeterministicAIService
 
-    def _posting_confidence(self, posting: JobPosting) -> float:
-        fields = [
-            bool(posting.company),
-            bool(posting.role),
-            bool(posting.description),
-            bool(posting.location or posting.remote_policy),
-            bool(posting.skills),
-            bool(posting.apply_url),
-        ]
-        return round((sum(fields) / len(fields)) * 100, 2)
-
-    def _match_analysis(self, fit_score: int) -> str:
-        if fit_score >= 75:
-            return "Strong match. Prioritize application and recruiter outreach."
-        if fit_score >= 55:
-            return "Possible match. Review missing details before applying."
-        return "Weak match. Archive unless strategically valuable."
+        return DeterministicAIService().evaluate(posting)
 
     def _span(self, name: str, **attributes: object) -> Iterator[None]:
         if self.observability is None:

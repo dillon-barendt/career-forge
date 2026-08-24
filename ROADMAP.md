@@ -70,7 +70,16 @@
 - expanded eval summaries and classifier fixtures
 - `career-forge run-once --dry-run`
 
-## Recommended Phase 9: Live Validation and Reviewed Apply
+### Phase 9: Public AI Agent Showcase
+
+- first-class deterministic AI service behind shared typed protocols
+- three-scenario, credential-free demo through real agent pipelines
+- reproducible Python 3.12 Docker image
+- 20-prompt correctness and latency benchmark with JSON output
+- CI gates for lint, format, scoped typing, 80% core coverage, smoke demo, benchmark, and Docker
+- public-first README, terminal demo GIF, community standards, and MIT license
+
+## Recommended Phase 10: Live Validation and Reviewed Apply
 
 1. Run the Phase 8 loop against the real dedicated Gmail inbox.
 2. Validate target Notion databases include `Dedupe Key` rich-text properties.

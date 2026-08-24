@@ -2,6 +2,7 @@ import re
 from datetime import timedelta
 from email.utils import parseaddr
 
+from career_ops.ai.contracts import EmailClassificationService
 from career_ops.ai.pydantic_ai_service import PydanticAIService
 from career_ops.models import (
     AuditEvent,
@@ -19,13 +20,12 @@ from career_ops.notion.schemas import (
     Contact,
     JobOpportunity,
 )
-from career_ops.scoring.rules import normalize_text
 
 
 class GmailIngestionPipeline:
     """Classify Gmail messages and create idempotent Notion mutation plans."""
 
-    def __init__(self, ai_service: PydanticAIService | None = None) -> None:
+    def __init__(self, ai_service: EmailClassificationService | None = None) -> None:
         self.ai_service = ai_service or PydanticAIService()
 
     def classify(self, message: EmailMessage) -> EmailClassification:
@@ -36,63 +36,6 @@ class GmailIngestionPipeline:
             reasons=ai_result.reasons,
             requires_human_review=ai_result.human_review_required,
             prompt_version=ai_result.prompt_version,
-        )
-
-    def _heuristic_classify(self, message: EmailMessage) -> EmailClassification:
-        text = normalize_text(f"{message.subject} {message.body} {message.sender}")
-
-        if "unsubscribe" in text or "newsletter" in text:
-            return self._classification(
-                EmailCategory.NEWSLETTER,
-                0.95,
-                "Newsletter signal detected.",
-            )
-        if any(term in text for term in ("not moving forward", "unfortunately", "declined")):
-            return self._classification(
-                EmailCategory.REJECTION,
-                0.9,
-                "Rejection language detected.",
-            )
-        if "offer" in text and "letter" in text:
-            return self._classification(EmailCategory.OFFER, 0.88, "Offer language detected.")
-        if "interview" in text and any(
-            term in text for term in ("invite", "schedule", "availability", "available")
-        ):
-            return self._classification(
-                EmailCategory.INTERVIEW_INVITATION,
-                0.9,
-                "Interview scheduling language detected.",
-            )
-        if "interview" in text and any(term in text for term in ("confirmed", "calendar")):
-            return self._classification(
-                EmailCategory.INTERVIEW_CONFIRMATION,
-                0.86,
-                "Interview confirmation language detected.",
-            )
-        if any(term in text for term in ("application received", "thank you for applying")):
-            return self._classification(
-                EmailCategory.APPLICATION_CONFIRMATION,
-                0.86,
-                "Application confirmation language detected.",
-            )
-        if any(term in text for term in ("following up", "circling back", "checking in")):
-            return self._classification(
-                EmailCategory.RECRUITER_FOLLOW_UP,
-                0.78,
-                "Recruiter follow-up language detected.",
-            )
-        if any(term in text for term in ("recruiter", "talent", "opportunity", "role")):
-            return self._classification(
-                EmailCategory.RECRUITER_OUTREACH,
-                0.72,
-                "Recruiter or opportunity language detected.",
-            )
-
-        return self._classification(
-            EmailCategory.COMPANY_COMMUNICATION,
-            0.52,
-            "Career-related message needs manual review.",
-            requires_human_review=True,
         )
 
     def plan(self, message: EmailMessage) -> GmailIngestionPlan:
@@ -158,21 +101,6 @@ class GmailIngestionPipeline:
             follow_up=follow_up,
             audit_events=audit_events,
             dedupe_key=dedupe_key,
-        )
-
-    def _classification(
-        self,
-        category: EmailCategory,
-        confidence: float,
-        reason: str,
-        *,
-        requires_human_review: bool = False,
-    ) -> EmailClassification:
-        return EmailClassification(
-            category=category,
-            confidence=confidence,
-            reasons=[reason],
-            requires_human_review=requires_human_review or confidence < 0.65,
         )
 
     def _extract_contact(self, message: EmailMessage, company_name: str) -> Contact:

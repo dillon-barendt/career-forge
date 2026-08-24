@@ -1,4 +1,4 @@
-# Career Forge Agents
+# CareerForge Agents
 
 The platform is split into small agents. Agents coordinate typed pipelines; they
 do not own Notion schemas directly.
@@ -53,6 +53,17 @@ not acknowledge or checkpoint messages.
 - resume, cover letter, and interview prep recommendations
 
 Prompt versions live in `prompts/phase3/`. Eval datasets live in `evals/`.
+
+## Deterministic Showcase
+
+`DeterministicAIService` implements the same email-classification and
+opportunity-evaluation protocols as the live Pydantic AI adapter. It owns
+versioned local rules used by fallback, tests, the public demo, and the
+20-prompt benchmark.
+
+`ShowcaseRunner` wires that service through the real Gmail Agent, Opportunity
+Agent, Workflow Orchestrator, job-provider registry, and material builder. It
+never reads credentials, makes network calls, or writes external state.
 
 ## Failure Handling
 

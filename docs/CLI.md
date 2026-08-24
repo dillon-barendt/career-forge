@@ -1,5 +1,18 @@
 # CLI
 
+## Public Demo
+
+The credential-free showcase is intentionally separate from the live operator
+CLI:
+
+```bash
+./demo.sh
+./demo.sh --json
+```
+
+It runs fixed fake data through the Gmail and Opportunity agents and never
+loads credentials or writes runtime events.
+
 The `career-forge` command is the daily operator interface.
 
 ## Daily

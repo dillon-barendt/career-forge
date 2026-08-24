@@ -1,7 +1,8 @@
 # Architecture
 
-Career Forge is a local Python automation platform with Notion as the system of
-record and provider adapters around every external source.
+CareerForge is a local Python automation platform with Notion as the system of
+record and provider adapters around every external source. Its public showcase
+uses the same application paths with deterministic, credential-free adapters.
 
 ```mermaid
 flowchart LR
@@ -12,8 +13,13 @@ flowchart LR
     WebhookService --> WebhookRegistry["Source Registry"]
     WebhookRegistry --> WebhookHandler["Provider Handler"]
     WebhookService --> Logfire
-    GmailAgent --> AI["Pydantic AI Service"]
+    GmailAgent --> AI{"AI Service Protocol"}
     OpportunityAgent --> AI
+    Demo["Demo + Benchmark"] --> GmailAgent
+    Demo --> OpportunityAgent
+    AI --> Deterministic["Deterministic AI Service"]
+    AI --> PydanticAI["Pydantic AI Service"]
+    PydanticAI --> Model["Model Provider"]
     AI --> Planner["Notion Mutation Planner"]
     Events --> Replay["Operator Replay Service"]
     Replay --> Executor
@@ -45,9 +51,21 @@ flowchart LR
 | `events/` | Append-only JSONL workflow event log |
 | `operator_loop.py` | Replay-oriented inspection and apply service for planned Notion mutations |
 | `state/` | Local checkpoint and processed-source state |
-| `ai/` | Pydantic AI service and prompt-versioned structured outputs |
+| `ai/` | Shared service protocols, deterministic rules, and live Pydantic AI adapter |
+| `showcase/` | Credential-free orchestration and stable demo output |
+| `benchmark/` | Versioned 20-prompt correctness and latency suite |
 | `analytics/` | Pure analytics functions |
 | `cli.py` | Daily operator interface |
+
+## AI Service Boundary
+
+`EmailClassificationService` and `OpportunityEvaluationService` are the small
+application-facing contracts. `PydanticAIService` handles live model calls and
+observability. `DeterministicAIService` handles reproducible rules and is the
+explicit fallback dependency; it does not imitate provider I/O.
+
+This split removes hidden exception-driven demo behavior while keeping fallback
+outputs compatible with the live service contract.
 
 ## Provider Boundary
 

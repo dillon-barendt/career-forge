@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "career-forge"
-version = "0.4.0"
-description = "Local career automation with Gmail, Pydantic AI, Logfire, Notion, and webhooks."
+version = "0.5.0"
+description = "CareerForge — AI agents that forge career data into action."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -28,13 +28,21 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   "anyio>=4.0.0",
+  "pillow>=11.0.0",
   "pre-commit>=4.0.0",
+  "pyright>=1.1.403",
   "pytest>=8.2.0",
+  "pytest-cov>=6.0.0",
   "ruff>=0.5.0",
 ]
 
 [project.scripts]
 career-forge = "career_ops.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/dillon-barendt/career-forge"
+Documentation = "https://github.com/dillon-barendt/career-forge#readme"
+Issues = "https://github.com/dillon-barendt/career-forge/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["career_ops"]
@@ -50,3 +58,26 @@ select = ["E", "F", "I", "UP", "B", "SIM", "TCH", "PTH"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+
+[tool.pyright]
+include = [
+  "career_ops/ai/contracts.py",
+  "career_ops/ai/deterministic.py",
+  "career_ops/showcase",
+  "benchmark",
+]
+pythonVersion = "3.12"
+typeCheckingMode = "standard"
+
+[tool.coverage.run]
+branch = true
+source = ["career_ops", "benchmark"]
+omit = [
+  "*/career_ops/gmail/client.py",
+  "*/career_ops/providers/notion/gateway.py",
+]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+skip_covered = true

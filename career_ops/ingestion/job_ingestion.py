@@ -1,5 +1,4 @@
-from typing import Protocol
-
+from career_ops.ai.contracts import OpportunityEvaluationService
 from career_ops.ai.pydantic_ai_service import (
     OPPORTUNITY_EVALUATOR_PROMPT_VERSION,
     PydanticAIService,
@@ -9,11 +8,6 @@ from career_ops.models import JobIngestionResult, JobPosting, OpportunityEvaluat
 from career_ops.notion.schemas import JobOpportunity
 from career_ops.providers.jobs.base import HttpxJobPageFetcher, JobPageFetcher
 from career_ops.providers.jobs.registry import JobProviderRegistry, default_job_provider_registry
-
-
-class OpportunityEvaluationService(Protocol):
-    def evaluate(self, posting: JobPosting) -> OpportunityEvaluation:
-        """Evaluate a normalized job posting."""
 
 
 class JobIngestionPipeline:

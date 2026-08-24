@@ -1,353 +1,245 @@
-# Career Forge
+# CareerForge
 
-Career Forge is a local automation platform for running a serious software
-engineering job search. It connects a dedicated Gmail inbox, Pydantic AI,
-Logfire, ATS job postings, GitHub webhooks, Linear execution, and Notion into
-one observable workflow.
+### AI agents that forge career data into action.
 
-Notion is the source of truth for durable career knowledge. Linear owns
-execution tasks. GitHub webhooks are the automation trigger surface for
-engineering work that should become Linear action.
+[![CI](https://github.com/dillon-barendt/career-forge/actions/workflows/ci.yml/badge.svg)](https://github.com/dillon-barendt/career-forge/actions/workflows/ci.yml)
+[![Python 3.12](https://img.shields.io/badge/python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Pydantic v2](https://img.shields.io/badge/Pydantic-v2-E92063?logo=pydantic&logoColor=white)](https://docs.pydantic.dev/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-34D399.svg)](LICENSE)
 
-## Current Implementation Status
+CareerForge is a typed, observable AI-agent platform for operating a serious
+software-engineering job search. It forges raw inbox messages and job postings
+into structured decisions, safe Notion mutation plans, and application
+materials—while keeping external effects explicit and auditable.
 
-Career Forge is currently in scaffold / vertical-slice development.
+![CareerForge deterministic agent demo](docs/assets/career-forge-demo.gif)
 
-| Area | Status | Notes |
-|---|---:|---|
-| CLI skeleton | In progress | Core command surface exists for setup validation, dry-runs, ingestion, replay, evals, events, feedback, and local materials |
-| Settings | In progress | Typed local configuration using `.env` and `pydantic-settings` |
-| Event log | In progress | Append-only JSONL runtime state under `.career_forge/` with replay metadata for operator workflows |
-| Gmail ingestion | In progress | OAuth client and dry-run sync exist; real OAuth setup remains manual |
-| Email classification | In progress | Pydantic AI structured output with deterministic fallback for dry-runs/tests |
-| Notion integration | In progress | Mutation planning, latest-plan inspection, dry-run replay, schema validation, and explicit confirmed apply exist |
-| Logfire tracing | In progress | Wrapper and feedback-loop events exist; hosted alerts still need manual setup |
-| Webhook API | In progress | Generic FastAPI route exists for `career-forge/notion` and `career-forge/github`; durable receipt storage and hosted routing remain follow-up work |
-| Linear automation | Planned | Linear should own execution state; GitHub webhook intake is now a first step toward issue and PR automation |
-| ATS providers | Scaffolded | Provider abstraction and generic extraction exist; provider-specific extraction remains shallow |
-| Calendar integration | Planned | Interview scheduling and reminders are not implemented |
-| Agents | Scaffolded | Agent modules exist as boundaries; deeper recruiter/resume/interview workflows are planned |
+## TL;DR
 
-## What It Does
+- **See it in one minute:** a deterministic three-agent workflow, no credentials required.
+- **Trust the output:** Pydantic v2 contracts, dependency-injected providers, append-only events, and dry-run-first writes.
+- **Reproduce the evidence:** Docker, 81-test CI, 81%+ core coverage, and a machine-readable 20-prompt benchmark.
+- **Extend it cleanly:** application logic stays independent from Gmail, Notion, ATS, model, and observability adapters.
 
-- dry-runs career email ingestion from `dillon.barendt.jobs@gmail.com`
-- classifies messages into job-search categories
-- evaluates opportunities with structured Pydantic AI outputs
-- plans Notion mutations before live writes
-- inspects and replays the latest safe Notion mutation plan
-- logs workflow events for replay and debugging
-- traces AI and sync work with Logfire when configured
-- ingests job URLs through a provider abstraction
-- accepts GitHub webhooks for observed automation triggers
-- provides a daily CLI interface for action queues
+## Run the demo in three commands
+
+```bash
+git clone https://github.com/dillon-barendt/career-forge.git && cd career-forge
+docker build -t career-forge-demo .
+docker run --rm career-forge-demo
+```
+
+The demo calls the real orchestrator, Gmail ingestion pipeline, ATS provider
+registry, opportunity evaluator, and material builder with fixed fake inputs.
+It makes **no network calls, requires no secrets, and performs no writes**.
+
+Already have Python 3.12 and [uv](https://docs.astral.sh/uv/)?
+
+```bash
+uv sync --extra dev
+./demo.sh
+```
+
+## Three agent scenarios
+
+### 1. Triage an interview invitation
+
+**Prompt**
+
+> Classify this recruiter email and propose the next safe workflow action.
+
+**Output**
+
+```text
+classification=Interview Invitation
+confidence=0.9
+next_action=Reply with availability and create prep brief.
+notion_write=planned
+```
+
+### 2. Evaluate a platform role
+
+**Prompt**
+
+> Extract this job posting, score fit, and recommend whether to prioritize it.
+
+**Output**
+
+```text
+provider=lever
+role=Principal Platform Engineer
+fit_score=87
+priority=High
+next_action=prioritize
+```
+
+### 3. Tailor the resume
+
+**Prompt**
+
+> Create truthful resume-tailoring notes from the evaluated opportunity.
+
+**Output**
+
+```text
+kind=resume_tailoring
+company=Acme
+preview=# Resume tailoring notes for Principal Platform Engineer at Acme
+```
+
+Get the same report as stable JSON:
+
+```bash
+./demo.sh --json
+```
+
+## Benchmark
+
+The versioned suite contains exactly 20 prompts: 10 career-email
+classification cases and 10 opportunity-evaluation cases. Success means the
+typed output satisfies each case's literal classification, fit-score, and
+next-action expectations—not merely that execution completed.
+
+```bash
+uv run python benchmark/bench.py --output benchmark/results.json
+```
+
+Latest local deterministic run:
+
+| Metric | Result |
+| --- | ---: |
+| Success rate | 100% (20/20) |
+| Median latency | 0.010 ms |
+| p95 latency | 0.039 ms |
+| Throughput | 73,537 prompts/s |
+
+Results vary by hardware. The committed [JSON report](benchmark/results.json)
+contains the machine-readable evidence; CI produces a fresh report artifact on
+every push and pull request.
 
 ## Architecture
 
 ```mermaid
-flowchart LR
-    Gmail["Gmail Inbox"] --> GmailSync["Gmail Sync"]
-    GmailSync --> EmailAI["Pydantic AI Email Classifier"]
-    JobURL["Job URL"] --> ATS["ATS Provider Extractor"]
-    Hook["hooks.concordmanage.com/career-forge/notion"] --> WebhookAPI["FastAPI Webhook API"]
-    GitHub["GitHub Webhooks"] --> WebhookAPI
-    WebhookAPI --> WebhookService["Webhook Ingestion Service"]
-    WebhookService --> Events
-    WebhookService --> Logfire
-    WebhookService --> Linear["Linear Execution Tasks"]
-    ATS --> OppAI["Pydantic AI Opportunity Evaluator"]
-    EmailAI --> Planner["Notion Mutation Planner"]
-    OppAI --> Planner
-    Events --> Replay["Operator Replay CLI"]
-    Replay --> Executor
-    Planner --> Executor["Notion Upsert Executor"]
-    Executor --> Notion["Notion Source of Truth"]
-    GmailSync --> Events["Append-only Event Log"]
-    Executor --> Events
-    EmailAI --> Logfire["Logfire"]
-    OppAI --> Logfire
-    Notion --> CLI["career-forge CLI"]
+flowchart TD
+    Interfaces["CLI / API / demo"] --> Application["Agents + workflows"]
+    Application --> Domain["Pydantic domain models"]
+    Application --> AI{"AI service protocol"}
+    AI --> Deterministic["Deterministic rules"]
+    AI --> PydanticAI["Pydantic AI + model provider"]
+    Application --> Providers["Gmail / ATS / Notion adapters"]
+    Providers --> Events["Append-only events + Logfire"]
 ```
 
-Core principle: business logic stays independent from providers. Gmail, Notion,
-Linear, GitHub, Logfire, and ATS integrations are adapters around typed domain
-models.
+The design follows one rule: **business decisions do not depend on provider
+implementation details**.
 
-## Installation
+| Boundary | Responsibility |
+| --- | --- |
+| Interfaces | Typer CLI, FastAPI webhooks, demo, benchmark |
+| Application | Thin agents coordinate typed pipelines |
+| Domain | Pydantic v2 models encode decisions and safety metadata |
+| AI services | Live Pydantic AI and deterministic implementations share protocols |
+| Providers | Gmail, ATS, Notion, webhook, and observability adapters own I/O |
+
+Read the full [architecture](ARCHITECTURE.md), [data model](DATA_MODEL.md), and
+[agent catalog](AGENTS.md).
+
+## What is implemented
+
+- Gmail classification and idempotent Notion mutation planning
+- single-message inspection and replayable dry-run/apply controls
+- ATS URL normalization through provider abstractions
+- structured opportunity fit evaluation and material recommendations
+- append-only workflow events, Logfire metrics, prompt versions, and evals
+- provider-neutral FastAPI webhook intake with verification and dedupe boundaries
+- deterministic demo and 20-prompt benchmark
+- Docker and CI verification for lint, format, typing, tests, coverage, smoke, and benchmark
+
+CareerForge is production-shaped but intentionally honest about live readiness:
+Gmail OAuth, Notion schemas, hosted alerting, and reviewed unattended apply
+still require operator validation. See [Project State](PROJECT_STATE.md) and the
+[Roadmap](ROADMAP.md).
+
+## Live-provider setup
 
 ```bash
 uv sync --extra dev
 cp .env.example .env
 uv run pre-commit install
+uv run career-forge setup validate
 ```
 
-Run checks:
+Important live settings:
 
-```bash
-uv run ruff check .
-uv run pytest
-```
-
-## Configuration
-
-Important settings in `.env`:
-
-```bash
-CAREER_FORGE_NOTION_TOKEN=secret_xxx
-CAREER_FORGE_GMAIL_ACCOUNT=dillon.barendt.jobs@gmail.com
-CAREER_FORGE_GMAIL_CREDENTIALS_PATH=.career_forge/gmail_credentials.json
-CAREER_FORGE_GMAIL_TOKEN_PATH=.career_forge/gmail_token.json
+```dotenv
 CAREER_FORGE_AI_PROVIDER=pydantic-ai
 CAREER_FORGE_PYDANTIC_AI_MODEL=openai:gpt-5.2
-CAREER_FORGE_PYDANTIC_AI_GATEWAY_ENABLED=false
-CAREER_FORGE_PYDANTIC_AI_GATEWAY_API_KEY=
-CAREER_FORGE_PYDANTIC_AI_GATEWAY_PROVIDER=openai
-CAREER_FORGE_PYDANTIC_AI_GATEWAY_ROUTE=
 CAREER_FORGE_OPENAI_API_KEY=
+CAREER_FORGE_NOTION_TOKEN=
+CAREER_FORGE_GMAIL_CREDENTIALS_PATH=.career_forge/gmail_credentials.json
+CAREER_FORGE_GMAIL_TOKEN_PATH=.career_forge/gmail_token.json
 CAREER_FORGE_LOGFIRE_TOKEN=
-CAREER_FORGE_LOGFIRE_BASE_URL=https://logfire-us.pydantic.dev
-CAREER_FORGE_LOGFIRE_PROJECT=dillon-barendt/career-forge
-CAREER_FORGE_LOGFIRE_METRICS_ENABLED=true
-CAREER_FORGE_LOGFIRE_VARIABLES_ENABLED=true
-CAREER_FORGE_LOGFIRE_INSTRUMENT_HTTPX=true
-CAREER_FORGE_LOGFIRE_INSTRUMENT_OPENAI=true
-CAREER_FORGE_LOGFIRE_INSTRUMENT_SYSTEM_METRICS=false
-CAREER_FORGE_EVENT_LOG_PATH=.career_forge/events.jsonl
-CAREER_FORGE_STATE_PATH=.career_forge/state.json
-CAREER_FORGE_WEBHOOKS_ENABLED=true
-CAREER_FORGE_WEBHOOKS_PUBLIC_BASE_URL=https://hooks.concordmanage.com
-CAREER_FORGE_WEBHOOKS_DEFAULT_PROJECT=career-forge
-CAREER_FORGE_WEBHOOKS_NOTION_ENABLED=true
-CAREER_FORGE_WEBHOOKS_NOTION_SECRET=
-CAREER_FORGE_WEBHOOKS_GITHUB_ENABLED=true
-CAREER_FORGE_WEBHOOKS_GITHUB_SECRET=
-CAREER_FORGE_WEBHOOKS_MAX_BODY_BYTES=1048576
-CAREER_FORGE_WEBHOOKS_LOG_PAYLOADS=false
 ```
 
-`LOGFIRE_TOKEN` is also supported as a compatibility fallback, but
-`CAREER_FORGE_LOGFIRE_TOKEN` is preferred for project-local configuration.
-
-Gmail OAuth credentials and live Notion writes are intentionally manual setup
-steps. Dry-run commands work without live credentials.
-
-To populate local secrets without echoing them in your shell history:
+The deterministic showcase does not read these values. Live Gmail and Notion
+commands remain dry-run-first:
 
 ```bash
-scripts/configure_local_secrets.sh
-uv run career-forge setup validate
-```
-
-The script writes the Gmail OAuth client file, the Gmail token path, the OpenAI
-key, the Notion token, and the core Notion database IDs into ignored local
-files and `.env`.
-
-## Fast Path: Local Dry Run
-
-This is the intended first successful local workflow:
-
-```bash
-uv sync --extra dev
-cp .env.example .env
-scripts/configure_local_secrets.sh
-uv run career-forge setup validate
 uv run career-forge ingest-gmail --dry-run
 uv run career-forge notion plan --latest
 uv run career-forge notion apply --latest --dry-run
 uv run career-forge events --limit 20
 ```
 
-## Fast Path: First Live Notion Write
+Live Notion apply requires both `--no-dry-run` and `--confirm`. Low-confidence
+plans remain review-gated.
 
-The safe live-write path is:
+## Development
+
+```bash
+uv sync --extra dev --locked
+scripts/dev_check.sh
+```
+
+The complete local gate runs:
 
 ```text
-dry run -> inspect event log -> inspect mutation plan -> apply one write
+ruff check .
+ruff format --check .
+pyright
+pytest + branch coverage (80% minimum)
+JSON smoke demo
+20-prompt benchmark
 ```
 
-Current working commands:
+Docker is verified in GitHub Actions:
 
 ```bash
-uv run career-forge ingest-gmail-message <gmail-message-id> --dry-run
-uv run career-forge events --limit 20
-uv run career-forge notion plan --latest
-uv run career-forge notion apply --latest --dry-run
-uv run career-forge ingest-gmail-message <gmail-message-id> \
-  --no-dry-run \
-  --mutation-index 0 \
-  --confirm-message-id <gmail-message-id>
-uv run career-forge notion apply --latest --no-dry-run --confirm
+docker build -t career-forge-demo .
+docker run --rm career-forge-demo ./demo.sh --json
 ```
 
-`ingest-gmail-message` does not advance the broad Gmail checkpoint and does not
-acknowledge the message as processed. Live mode applies exactly one indexed
-mutation and requires the message id to be repeated through
-`--confirm-message-id`. The broader replay path is `career-forge notion
-plan --latest` followed by `career-forge notion apply --latest --dry-run`.
-Live replay requires `--no-dry-run --confirm` and refuses low-confidence plans
-unless explicitly reviewed.
+## Repository guide
 
-## Phase 8 Operator Loop
-
-The first production-shaped loop is:
-
-```text
-Gmail inbox
-  -> fetch one known message
-  -> classify message
-  -> append event log entry
-  -> generate Notion mutation plan
-  -> dry-run preview
-  -> apply one safe Notion upsert
-  -> trace everything in Logfire
-```
-
-Phase 8 hardens this into a local operator loop:
-
-```bash
-career-forge setup validate
-career-forge ingest-gmail --dry-run
-career-forge ingest-gmail-message <gmail-message-id> --dry-run
-career-forge notion plan --latest
-career-forge notion apply --latest --dry-run
-career-forge evals
-career-forge logfire-sync
-career-forge run-once --dry-run
-```
-
-Safety model:
-
-- dry-run is the default for Gmail ingestion, single-message inspection, Notion
-  replay, and `run-once`
-- broad Gmail dry-runs do not acknowledge messages, update checkpoints, or mark
-  local state as processed
-- live Notion replay requires `--confirm`
-- low-confidence mutation plans carry review metadata and are refused by replay
-  unless explicitly reviewed
-- Notion live apply validates the target database has a `Dedupe Key` rich-text
-  property before writing
-- events are append-only; failed mutations are replay-eligible instead of being
-  mutated in place
-
-Local scheduled runner:
-
-```bash
-career-forge run-once --dry-run
-```
-
-Run it daily with cron or launchd once Gmail OAuth, Notion database IDs, and
-Logfire configuration have been validated. `--apply-reviewed` is reserved until
-reviewed-plan metadata is wired end to end.
-
-## Daily Workflow
-
-Start every day with:
-
-```bash
-career-forge today
-```
-
-Useful commands:
-
-```bash
-career-forge ingest-url "https://jobs.lever.co/example/backend"
-career-forge evaluate "Senior Backend Engineer"
-career-forge review
-career-forge metrics
-```
-
-## Webhook API
-
-The webhook API exposes a reusable route:
-
-```text
-POST /hooks/{project_name}/{source_name}
-```
-
-The first registered source is:
-
-```text
-https://hooks.concordmanage.com/career-forge/notion
-  -> http://localhost:<api-port>/hooks/career-forge/notion
-```
-
-Run locally with an ASGI server such as:
-
-```bash
-uv run uvicorn career_ops.api.app:app --reload
-```
-
-Then point ngrok or the reserved public domain `https://hooks.concordmanage.com`
-at the local FastAPI server. The route accepts arbitrary JSON objects, captures
-redacted headers and raw-body hashes, builds a deterministic dedupe key, runs a
-source verifier when configured, and returns a typed acknowledgement quickly.
-Notion verification currently reports `not_configured` unless
-`CAREER_FORGE_WEBHOOKS_NOTION_SECRET` is wired to a real provider verification
-scheme.
-
-## Screenshots
-
-Screenshots are intentionally placeholders until the project has stable public
-demo data.
-
-- `docs/assets/career-forge-today.png` - planned CLI daily view
-- `docs/assets/notion-command-center.png` - planned Notion dashboard
-- `docs/assets/logfire-trace.png` - planned Logfire trace
-
-## Repository Guide
-
-- [Project State](PROJECT_STATE.md)
 - [Architecture](ARCHITECTURE.md)
-- [Data Model](DATA_MODEL.md)
-- [Automations](AUTOMATIONS.md)
 - [Agents](AGENTS.md)
+- [Automations](AUTOMATIONS.md)
+- [Data model](DATA_MODEL.md)
 - [CLI](docs/CLI.md)
 - [Gmail](docs/GMAIL.md)
 - [Notion](docs/NOTION.md)
 - [Pydantic AI](docs/PYDANTIC_AI.md)
-- [Logfire](docs/LOGFIRE.md)
-- [Feedback Loop](docs/FEEDBACK_LOOP.md)
-- [Providers](docs/PROVIDERS.md)
-- [Prompts](docs/PROMPTS.md)
 - [Evals](docs/EVALS.md)
-- [Roadmap](ROADMAP.md)
+- [Providers](docs/PROVIDERS.md)
+- [Contributing](CONTRIBUTING.md)
+- [Security](SECURITY.md)
 
-## Provider Status
-
-| Provider | Status | Purpose |
-|---|---:|---|
-| Gmail | In progress | Career inbox ingestion and message classification |
-| Notion | In progress | Source of truth and dashboard persistence |
-| Logfire | In progress | Tracing, metrics, evals, and feedback loops |
-| Greenhouse | Planned | Job posting extraction |
-| Lever | Planned | Job posting extraction |
-| Ashby | Planned | Job posting extraction |
-| Workday | Planned | Job posting extraction |
-| LinkedIn | Planned | Job discovery and relationship tracking |
-| Indeed | Planned | Job discovery provider |
-| Google Calendar | Planned | Interview scheduling and follow-up reminders |
-
-## Roadmap
-
-Near-term:
-
-- validate the first live Notion upsert against real database schemas
-- run the Phase 8 loop against one real Gmail message
-- expand hosted Logfire alert policies
-- add reviewed-plan metadata for unattended apply
-- harden provider-specific ATS extraction
-
-Future:
-
-- Interview Agent
-- Resume Agent
-- Dream Company Watch
-- recruiter relationship analytics
-- dashboard UI
-- API server
-- provider plugin marketplace
-
-## Data Safety
+## Safety and privacy
 
 Do not commit real job-search data, Gmail tokens, Notion tokens, resumes, or
-recruiter messages. Runtime state belongs under `.career_forge/`, which is ignored
-by Git.
+recruiter messages. Runtime state belongs under `.career_forge/` and external
+mutations must stay idempotent, observable, and explicitly confirmed.
+
+## License
+
+[MIT](LICENSE) © 2026 CareerForge contributors.

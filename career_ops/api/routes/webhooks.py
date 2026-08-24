@@ -1,10 +1,9 @@
 from typing import TYPE_CHECKING
 
-from fastapi import APIRouter, HTTPException, Request, status
-
 from career_ops.application.webhooks.registry import UnsupportedWebhookSourceError
 from career_ops.config import get_settings
 from career_ops.models.webhooks import WebhookAck, WebhookRoute
+from fastapi import APIRouter, HTTPException, Request, status
 
 if TYPE_CHECKING:
     from career_ops.application.webhooks.service import WebhookIngestionService

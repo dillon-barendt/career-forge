@@ -1,11 +1,10 @@
-from fastapi import FastAPI
-
 from career_ops.api.routes.webhooks import router as webhooks_router
 from career_ops.application.webhooks.idempotency import InMemoryWebhookReceiptStore
 from career_ops.application.webhooks.registry import WebhookSourceRegistry
 from career_ops.application.webhooks.service import WebhookIngestionService
 from career_ops.config import Settings, get_settings
 from career_ops.observability import Observability
+from fastapi import FastAPI
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
